@@ -1,0 +1,43 @@
+/* Header toolbar styling */
+.fc .fc-button {
+  font-size: 20px; /* Adjust size for desktop */
+  padding: 10px;
+}
+
+@media (max-width: 768px) {
+  .fc .fc-buttonr {
+    font-size: 14px; /* Adjust size for tablets */
+    padding: 8px;
+  }
+} /* This closing brace was missing */
+
+@media (max-width: 480px) {
+  .fc .fc-button {
+    font-size: 12px; /* Adjust size for mobile */
+    padding: 5px;
+  }
+}
+
+/* Customize buttons */
+.fc .fc-button {
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  flex: auto;
+}
+
+.fc-prev-button:hover,
+.fc-next-button:hover,
+.fc-today-button:hover {
+  background-color: #45a049;
+}
+
+/* Title Styling */
+.fc .fc-toolbar-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  text-transform: uppercase;
+}
