@@ -36,7 +36,8 @@ const ClinicHistory: React.FC<ClinicHistoryProps> = ({ studentId, onHistoryUpdat
           console.log('Fetched data:', data);
           setHistory(data);
         } else {
-          setError('Failed to fetch history.');
+          console.warn('No history found.');
+          setHistory([]); // Clear history if no data is returned
         }
       } catch (error) {
         setError('An error occurred while fetching history.');
@@ -65,14 +66,6 @@ const ClinicHistory: React.FC<ClinicHistoryProps> = ({ studentId, onHistoryUpdat
     );
   }
 
-  if (error) {
-    return (
-      <div className="p-4 text-red-600 text-center">
-        {error}
-      </div>
-    );
-  }
-
   return (
     <div className="mt-8 bg-white rounded-lg shadow-lg">
       <table className="min-w-full">
@@ -84,33 +77,25 @@ const ClinicHistory: React.FC<ClinicHistoryProps> = ({ studentId, onHistoryUpdat
             <th className="p-4 text-left text-sm font-semibold text-gray-600">User</th>
           </tr>
         </thead>
-      </table>
-
-      <div
-        className="overflow-y-auto max-h-64 scrollbar-hide"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        <table className="min-w-full">
-          <tbody>
-            {history.length > 0 ? (
-              history.slice(0, 5).map((record, index) => (
-                <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
-                  <td className="p-4 text-gray-700">{new Date(record.timestamp).toLocaleString()}</td>
-                  <td className="p-4 text-gray-700">{record.action}</td>
-                  <td className="p-4 text-gray-700">{record.fileName}</td>
-                  <td className="p-4 text-gray-700">{record.user}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="p-4 text-gray-700 text-center">
-                  No history available.
-                </td>
+        <tbody className="overflow-y-auto max-h-64">
+          {history.length > 0 ? (
+            history.map((record, index) => (
+              <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
+                <td className="p-4 text-gray-700">{new Date(record.timestamp).toLocaleString()}</td>
+                <td className="p-4 text-gray-700">{record.action}</td>
+                <td className="p-4 text-gray-700">{record.fileName}</td>
+                <td className="p-4 text-gray-700">{record.user}</td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={4} className="p-4 text-gray-700 text-center">
+                No history available.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 };

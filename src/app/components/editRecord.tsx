@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FiX } from "react-icons/fi";
 import { useOptions } from '../options/useOptions'; // Import the hook
 import DepartmentSelect from '../options/DepartmentSelect';
 import CourseSelect from '../options/CourseSelect';
@@ -167,12 +166,6 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
 
   return (
     <>
-      <button
-        onClick={onClose}
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-      >
-        <FiX size={24} />
-      </button>
       <h2 className="text-xl font-semibold mb-4">Edit Student Record</h2>
 
       {isLoading ? (

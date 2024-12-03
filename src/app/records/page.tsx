@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { FiEdit, FiX } from "react-icons/fi";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import ConsultationCards from "../components/ConsultationCards";
@@ -9,6 +11,7 @@ import EmergencyContacts from "../components/EmergencyContacts";
 import Image from "next/image";
 import AddRecord from "../components/addrecord";
 import EditRecord from "../components/editRecord";
+import { Trie } from "../components/utils/trie";
 
 interface Student {
   id: number;
@@ -39,12 +42,20 @@ const Record: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [recordAdded, setRecordAdded] = useState(false);
+  const [trie, setTrie] = useState<Trie | null>(null);
 
   const fetchStudentData = async () => {
     try {
       const response = await fetch("/api/students");
       const data = await response.json();
       setStudents(data);
+
+      const newTrie = new Trie();
+      data.forEach((student: Student) =>
+        newTrie.insert(`${student.last_name}${student.first_name}`, student)
+      );
+      setTrie(newTrie);
     } catch (error) {
       console.error("Error fetching student data:", error);
     } finally {
@@ -60,11 +71,11 @@ const Record: React.FC = () => {
     const term = e.target.value;
     setSearchTerm(term);
 
-    if (students) {
-      const filtered = students.filter((student) =>
-        `${student.first_name} ${student.last_name}`.toLowerCase().includes(term.toLowerCase())
-      );
-      setFilteredStudents(filtered);
+    if (trie && term.trim()) {
+      const results = trie.search(term);
+      setFilteredStudents(results);
+    } else {
+      setFilteredStudents([]);
     }
   };
 
@@ -104,13 +115,21 @@ const Record: React.FC = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const openAddModal = () => setIsAddModalOpen(true);
+  const openAddModal = () => {
+    setIsAddModalOpen(true);
+    setRecordAdded(false); // Reset record addition state
+  };
+
   const closeAddModal = () => {
     setIsAddModalOpen(false);
-    fetchStudentData();
+
+    if (recordAdded) {
+      toast.success("Record successfully added!");
+    }
   };
 
   const openEditModal = () => setIsEditModalOpen(true);
+
   const closeEditModal = (updatedStudent?: Student) => {
     setIsEditModalOpen(false);
 
@@ -130,6 +149,21 @@ const Record: React.FC = () => {
     setTimeout(fetchStudentData, 100);
   };
 
+  const handleAddSuccess = () => {
+    setRecordAdded(true);
+    setIsAddModalOpen(false); // Close the modal after successful addition
+    toast.success("Record successfully added!");
+    fetchStudentData(); // Refresh student data
+  };
+
+  const handleAddFailure = (errorType: string) => {
+    if (errorType === "duplicate") {
+      toast.error("Duplicate entry. This record already exists.");
+    } else {
+      toast.error("Failed to add record. Please try again.");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -141,6 +175,7 @@ const Record: React.FC = () => {
   return (
     <div className="flex-1 bg-gray-50">
       <Header />
+      <ToastContainer />
       <div className="flex">
         <Sidebar />
         <main className="flex-1 p-6">
@@ -164,12 +199,15 @@ const Record: React.FC = () => {
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
               <div className="p-6 rounded-lg shadow-lg max-w-5xl h-5/6 overflow-hidden overflow-y-scroll bg-white">
                 <button
-                  onClick={() => closeAddModal()}
+                  onClick={closeAddModal}
                   className="absolute top-2 right-2 p-2 text-gray-500 hover:text-gray-700"
                 >
                   <FiX size={24} />
                 </button>
-                <AddRecord />
+                <AddRecord
+                  onAddSuccess={handleAddSuccess}
+                  onAddFailure={handleAddFailure}
+                />
               </div>
             </div>
           )}
@@ -178,7 +216,7 @@ const Record: React.FC = () => {
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
               <div className="p-6 rounded-lg shadow-lg max-w-5xl w-full h-5/6 overflow-hidden overflow-y-scroll bg-white">
                 <button
-                  onClick={() => closeEditModal()}
+                  onClick={closeEditModal}
                   className="absolute top-2 right-2 p-2 text-gray-500 hover:text-gray-700"
                 >
                   <FiX size={24} />

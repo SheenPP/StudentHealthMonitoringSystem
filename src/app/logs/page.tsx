@@ -8,6 +8,12 @@ type Image = {
   id: string;
   image_url: string;
   filename: string;
+  uploaded_at: string; // Use uploaded_at field
+};
+
+type SortState = {
+  key: keyof Image;
+  order: "asc" | "desc";
 };
 
 export default function Logs() {
@@ -15,6 +21,10 @@ export default function Logs() {
   const [modalImage, setModalImage] = useState<Image | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [sortState, setSortState] = useState<SortState>({
+    key: "uploaded_at",
+    order: "desc",
+  });
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -80,6 +90,37 @@ export default function Logs() {
     setModalImage(null);
   }, []);
 
+  // Sorting Logic
+  const sortedImages = [...images].sort((a, b) => {
+    const aValue = a[sortState.key];
+    const bValue = b[sortState.key];
+    if (typeof aValue === "string" && typeof bValue === "string") {
+      return sortState.order === "asc"
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
+    }
+    if (aValue instanceof Date && bValue instanceof Date) {
+      return sortState.order === "asc"
+        ? new Date(aValue).getTime() - new Date(bValue).getTime()
+        : new Date(bValue).getTime() - new Date(aValue).getTime();
+    }
+    return 0;
+  });
+
+  const toggleSortOrder = (key: keyof Image) => {
+    setSortState((prevState) => {
+      if (prevState.key === key) {
+        // Toggle order for the current key
+        return {
+          key,
+          order: prevState.order === "asc" ? "desc" : "asc",
+        };
+      }
+      // Set to ascending for a new key
+      return { key, order: "asc" };
+    });
+  };
+
   return (
     <div className="flex flex-col flex-1 bg-gray-50 text-gray-800 min-h-screen">
       <Header />
@@ -117,8 +158,29 @@ export default function Logs() {
             )}
           </div>
 
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex gap-4">
+              <button
+                className={`px-4 py-2 text-sm font-semibold rounded-lg ${
+                  sortState.key === "uploaded_at" ? "bg-blue-200" : "bg-gray-100"
+                }`}
+                onClick={() => toggleSortOrder("uploaded_at")}
+              >
+                Sort by Date {sortState.key === "uploaded_at" && (sortState.order === "asc" ? "↑" : "↓")}
+              </button>
+              <button
+                className={`px-4 py-2 text-sm font-semibold rounded-lg ${
+                  sortState.key === "filename" ? "bg-blue-200" : "bg-gray-100"
+                }`}
+                onClick={() => toggleSortOrder("filename")}
+              >
+                Sort by Name {sortState.key === "filename" && (sortState.order === "asc" ? "↑" : "↓")}
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-            {images.map((image) => (
+            {sortedImages.map((image) => (
               <div
                 key={image.id}
                 className="relative border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-transform transform hover:scale-105"

@@ -2,18 +2,18 @@ import { useState } from 'react';
 
 export const useOptions = () => {
   const departments = [
-    "Science",
-    "Arts",
-    "Commerce",
-    "Engineering",
+    "College of Technology and Allied Sciences",
     "College of Teacher Education",
   ];
 
   const coursesByDepartment: Record<string, string[]> = {
-    "Science": ["Physics", "Chemistry", "Mathematics"],
-    "Arts": ["English", "History", "Philosophy"],
-    "Commerce": ["Economics", "Accounting", "Business Studies"],
-    "Engineering": ["Mechanical Engineering", "Civil Engineering", "Computer Science"],
+    "College of Technology and Allied Sciences": [
+      "Bachelor of Science in Computer Science",
+      "Bachelor of Science in Fisheries", 
+      "Bachelor of Science in Industrial Technology major in Food Preparation and Service Management",
+      "Bachelor of Science in Industrial Technology major in Electrical Technology", 
+      "Midwifery", 
+    ],
     "College of Teacher Education": [
       "Bachelor in Elementary Education",
       "Bachelor in Secondary Education major in English",

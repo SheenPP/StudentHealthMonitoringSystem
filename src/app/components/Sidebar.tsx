@@ -65,15 +65,6 @@ const Sidebar: React.FC = () => {
         <ul className="space-y-4">
           <li className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
             <Link
-              href="/"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${pathname === '/' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-200 text-gray-700'}`}
-            >
-              <FiHome size={20} />
-              {!isCollapsed && <span className="ml-3">Home</span>}
-            </Link>
-          </li>
-          <li className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'}`}>
-            <Link
               href="/dashboard"
               className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${pathname === '/dashboard' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-200 text-gray-700'}`}
             >

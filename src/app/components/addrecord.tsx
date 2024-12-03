@@ -1,16 +1,22 @@
 'use client';
 import React, { useState } from 'react';
 import { FiX } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 import { useOptions } from '../options/useOptions'; // Import the hook
 import DepartmentSelect from '../options/DepartmentSelect';
 import CourseSelect from '../options/CourseSelect';
 import YearSelect from '../options/YearSelect';
 
-const AddRecord: React.FC = () => {
+interface AddRecordProps {
+  onAddSuccess: () => void;
+  onAddFailure: (errorType: string) => void; // Callback for failure
+}
+
+const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => {
   const [studentId, setStudentId] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [gender, setGender] = useState(''); 
+  const [gender, setGender] = useState('');
   const [department, setDepartment] = useState('');
   const [course, setCourse] = useState('');
   const [year, setYear] = useState('');
@@ -58,20 +64,32 @@ const AddRecord: React.FC = () => {
         body: formData,
       });
 
+      if (response.status === 409) {
+        // Handle duplicate entry
+        onAddFailure('duplicate');
+        return;
+      }
+
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error('Failed to add record');
       }
 
       const result = await response.json();
       console.log(result.message); // Handle success message
+      onAddSuccess(); // Notify parent component
     } catch (error) {
       console.error('Error adding student record:', error);
+      onAddFailure('general'); // Notify parent about a general failure
     }
   };
 
   return (
     <div className="relative">
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4" encType="multipart/form-data">
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        encType="multipart/form-data"
+      >
         <div>
           <label className="block mb-1">Student ID</label>
           <input
@@ -129,9 +147,18 @@ const AddRecord: React.FC = () => {
           </div>
         </div>
 
-        <DepartmentSelect department={department} setDepartment={setDepartment} departments={departments} />
+        <DepartmentSelect
+          department={department}
+          setDepartment={setDepartment}
+          departments={departments}
+        />
 
-        <CourseSelect department={department} course={course} setCourse={setCourse} coursesByDepartment={coursesByDepartment} />
+        <CourseSelect
+          department={department}
+          course={course}
+          setCourse={setCourse}
+          coursesByDepartment={coursesByDepartment}
+        />
 
         <YearSelect year={year} setYear={setYear} years={years} />
 
