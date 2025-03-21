@@ -1,19 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-const Login = () => {
+const AdminLogin = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
 
-  const handleRoleRedirect = (role: "admin" | "student") => {
-    router.push(`/${role}-login`);
-  };
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) return null; // Prevents SSR mismatch
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,12 +24,16 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await axios.post("/api/auth/login", { username, password });
-      const { token } = response.data;
-      localStorage.setItem("authToken", token); // Store the JWT token locally
-      window.location.href = "/dashboard"; // Redirect after successful login using window.location
-    } catch (error) {
-      setError("Invalid username or password");
+      await axios.post(
+        "/api/auth/adminlogin",
+        { username, password },
+        { withCredentials: true } // Sends HTTP-only cookie
+      );
+
+      // Redirect to admin dashboard
+      router.push("/admin/dashboard");
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Invalid username or password");
     } finally {
       setLoading(false);
     }
@@ -35,12 +42,12 @@ const Login = () => {
   return (
     <div className="flex flex-col items-center justify-center p-12">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-        <h2 className="text-2xl text-black font-semibold mb-6 text-center">Login</h2>
+        <h2 className="text-2xl text-black font-semibold mb-6 text-center">Admin Login</h2>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-              Username
+              Admin Username
             </label>
             <input
               type="text"
@@ -73,25 +80,9 @@ const Login = () => {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-
-        {/* Admin & Student Text Links */}
-        <div className="mt-6 text-center">
-          <p 
-            className="text-sm text-gray-600 cursor-pointer hover:underline"
-            onClick={() => handleRoleRedirect("admin")}
-          >
-            Admin
-          </p>
-          <p 
-            className="text-sm text-gray-600 cursor-pointer hover:underline mt-2"
-            onClick={() => handleRoleRedirect("student")}
-          >
-            Student
-          </p>
-        </div>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default AdminLogin;

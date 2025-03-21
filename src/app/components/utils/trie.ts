@@ -19,7 +19,7 @@ export class Trie {
 
   insert(key: string, record: any) {
     let node = this.root;
-    for (const char of key) {  // Removed .toLowerCase() to keep original case
+    for (const char of key) {
       if (!node.children[char]) {
         node.children[char] = new TrieNode();
       }
@@ -31,7 +31,7 @@ export class Trie {
 
   search(prefix: string): any[] {
     let node = this.root;
-    for (const char of prefix) {  // Removed .toLowerCase() to keep original case
+    for (const char of prefix) {
       if (!node.children[char]) return [];
       node = node.children[char];
     }

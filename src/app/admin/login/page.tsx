@@ -1,11 +1,11 @@
+// pages/admin-login.tsx
 "use client";
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link"; // Import Link from Next.js
-import Login from "./components/LoginModal";
-import dotenv from 'dotenv';
-dotenv.config();
+import AdminLogin from "../../components/AdminLogin"; // Assuming you have an AdminLogin component
 
-const Home = () => {
+const AdminLoginPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ const Home = () => {
       <div className="bg-black bg-opacity-50 min-h-screen">
         {/* Navbar */}
         <nav className="flex justify-between items-center p-6 bg-white bg-opacity-90 shadow-md">
-          <div className="text-xl font-bold text-blue-500">BISU Clinic</div>
+          <div className="text-xl font-bold text-blue-500">BISU Clinic - Admin</div>
           <ul className="flex space-x-8">
             {/* Home Link */}
             <li>
@@ -56,16 +56,16 @@ const Home = () => {
         {/* Hero Section */}
         <section className="flex flex-col md:flex-row items-center justify-between p-12 text-white">
           <div className="md:w-1/2">
-            <h1 className="text-4xl font-bold text-blue-300">HEALTH CARE</h1>
+            <h1 className="text-4xl font-bold text-blue-300">ADMIN PORTAL</h1>
             <p className="mt-4 text-gray-200 text-justify mr-2">
-              Our Student's Profiling Health Management System makes health records easy to access and keep organized. Say goodbye to paperwork and hello to an efficient and secure solution.
+              Welcome to the Admin Portal. Manage student health records, appointments, and clinic operations efficiently and securely. Access all the tools you need to keep the clinic running smoothly.
             </p>
-            {/* Login Section */}
-            <Login />
+            {/* Admin Login Section */}
+            <AdminLogin />
           </div>
 
           <div className="md:w-1/2 mt-8 md:mt-0 flex justify-center">
-            <img src="/building.gif" alt="Healthcare GIF" className="w-full h-auto" />
+            <img src="/building.gif" alt="Admin GIF" className="w-full h-auto" /> {/* Update the GIF for admin */}
           </div>
         </section>
       </div>
@@ -73,4 +73,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default AdminLoginPage;

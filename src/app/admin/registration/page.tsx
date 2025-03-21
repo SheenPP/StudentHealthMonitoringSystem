@@ -1,11 +1,11 @@
+// pages/student-register.tsx
 "use client";
-import React, { useState, useEffect } from "react";
-import Link from "next/link"; // Import Link from Next.js
-import Login from "./components/LoginModal";
-import dotenv from 'dotenv';
-dotenv.config();
 
-const Home = () => {
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import AdminRegistrationForm from "../../components/AdminRegistrationForm";
+
+const AdminRegisterPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,10 +58,10 @@ const Home = () => {
           <div className="md:w-1/2">
             <h1 className="text-4xl font-bold text-blue-300">HEALTH CARE</h1>
             <p className="mt-4 text-gray-200 text-justify mr-2">
-              Our Student's Profiling Health Management System makes health records easy to access and keep organized. Say goodbye to paperwork and hello to an efficient and secure solution.
+              Register to access our Profiling Health Management System. Keep your health records organized and secure.
             </p>
-            {/* Login Section */}
-            <Login />
+            {/* Student Registration Section */}
+            <AdminRegistrationForm />
           </div>
 
           <div className="md:w-1/2 mt-8 md:mt-0 flex justify-center">
@@ -73,4 +73,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default AdminRegisterPage;

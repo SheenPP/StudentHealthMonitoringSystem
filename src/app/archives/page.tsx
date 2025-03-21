@@ -1,108 +1,125 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation"; // ✅ Redirect support
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import { Loader } from "lucide-react";
 
 type Archive = {
   id: string;
-  file_id: string;
   file_name: string;
   deleted_by: string;
-  deleted_at: string; // Date of deletion
-};
-
-type SortState = {
-  key: keyof Archive;
-  order: "asc" | "desc";
+  deleted_at: string;
 };
 
 export default function Archives() {
   const [archives, setArchives] = useState<Archive[]>([]);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // Loading state for actions
-  const [sortState, setSortState] = useState<SortState>({
-    key: "deleted_at",
-    order: "desc",
-  });
+  const [loadingData, setLoadingData] = useState(true);
+  const [loadingUI, setLoadingUI] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null); // ✅ Track processing file
+  const router = useRouter();
 
+  // 🔹 Check if the user is authenticated
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      router.push("/");
+    }
+  }, [router]);
+
+  // Fetch archives data
   const fetchArchives = useCallback(async () => {
     try {
-      setLoading(true);
-      const res = await fetch("/api/recycle-bin");
+      setLoadingData(true);
+      const res = await fetch("/api/recycle-bin", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`, // ✅ Secure API requests
+        },
+      });
       if (!res.ok) throw new Error("Failed to fetch archives");
       const data: Archive[] = await res.json();
       setArchives(data);
     } catch (err) {
-      if (err instanceof Error) {
-        console.error("Error fetching archives:", err.message);
-        setError("Failed to load archives. Please try again later.");
-      } else {
-        console.error("Unknown error:", err);
-        setError("An unknown error occurred.");
-      }
+      console.error("Error fetching archives:", err);
+      setError("Failed to load archives. Please try again later.");
     } finally {
-      setLoading(false);
+      setLoadingData(false);
     }
   }, []);
 
   useEffect(() => {
     fetchArchives();
+    setTimeout(() => setLoadingUI(false), 1000);
   }, [fetchArchives]);
 
-  const handleAction = async (file_id: string, action: "restore" | "delete") => {
+  const isLoading = loadingData || loadingUI;
+
+  // Handle Restore File Action
+  const handleRestore = async (id: string, file_name: string) => {
+    const confirmed = window.confirm(`Are you sure you want to restore "${file_name}"?`);
+    if (!confirmed) return;
+
+    setProcessingId(id); // ✅ Show loading indicator
+
     try {
-      setLoading(true);
       const res = await fetch("/api/recycle-bin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ file_id, action }),
+        body: JSON.stringify({ action: "restore", file_id: id }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Action failed");
-      }
-      fetchArchives(); // Refresh the list after the action
-    } catch (err) {
-      if (err instanceof Error) {
-        console.error(`Failed to ${action} file:`, err.message);
-        setError(`Failed to ${action} file. Please try again.`);
-      } else {
-        console.error("Unknown error:", err);
-        setError("An unknown error occurred.");
-      }
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to restore file");
+
+      alert(`"${file_name}" has been restored successfully!`);
+      fetchArchives();
+    } catch (error) {
+      console.error("Restore error:", error);
+      alert("Failed to restore the file. Please try again.");
     } finally {
-      setLoading(false);
+      setProcessingId(null);
     }
   };
 
-  const sortedArchives = [...archives].sort((a, b) => {
-    const aValue = a[sortState.key];
-    const bValue = b[sortState.key];
-    if (typeof aValue === "string" && typeof bValue === "string") {
-      return sortState.order === "asc"
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
-    }
-    if (aValue instanceof Date && bValue instanceof Date) {
-      return sortState.order === "asc"
-        ? new Date(aValue).getTime() - new Date(bValue).getTime()
-        : new Date(bValue).getTime() - new Date(aValue).getTime();
-    }
-    return 0;
-  });
+  // Handle Permanent Delete Action
+  const handleDelete = async (id: string, file_name: string) => {
+    const confirmed = window.confirm(`Are you sure you want to permanently delete "${file_name}"?`);
+    if (!confirmed) return;
 
-  const toggleSortOrder = (key: keyof Archive) => {
-    setSortState((prevState) => {
-      if (prevState.key === key) {
-        return {
-          key,
-          order: prevState.order === "asc" ? "desc" : "asc",
-        };
-      }
-      return { key, order: "asc" };
-    });
+    setProcessingId(id); // ✅ Show loading indicator
+
+    try {
+      const res = await fetch("/api/recycle-bin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", file_id: id }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to delete file");
+
+      alert(`"${file_name}" has been deleted permanently!`);
+      fetchArchives();
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete the file. Please try again.");
+    } finally {
+      setProcessingId(null);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
+        <div className="flex flex-col items-center">
+          <Loader className="animate-spin h-12 w-12 text-blue-500" />
+          <p className="mt-3 text-blue-600 text-lg">Loading Archives...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col flex-1 bg-blue-50 text-gray-800 min-h-screen">
@@ -120,81 +137,42 @@ export default function Archives() {
             </div>
           )}
 
-          {loading && (
-            <p className="mb-4 text-blue-600 text-center animate-pulse">
-              Processing... Please wait.
-            </p>
-          )}
-
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex gap-4">
-              <button
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
-                  sortState.key === "deleted_at"
-                    ? "bg-blue-500 text-white"
-                    : "bg-blue-100 text-blue-800"
-                }`}
-                onClick={() => toggleSortOrder("deleted_at")}
-              >
-                Sort by Date {sortState.key === "deleted_at" && (sortState.order === "asc" ? "↑" : "↓")}
-              </button>
-              <button
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
-                  sortState.key === "file_name"
-                    ? "bg-blue-500 text-white"
-                    : "bg-blue-100 text-blue-800"
-                }`}
-                onClick={() => toggleSortOrder("file_name")}
-              >
-                Sort by Name {sortState.key === "file_name" && (sortState.order === "asc" ? "↑" : "↓")}
-              </button>
-            </div>
-          </div>
-
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-200 rounded-lg">
               <thead className="bg-blue-100">
                 <tr>
-                  <th className="px-4 py-2 text-left text-sm font-bold text-blue-800">
-                    File Name
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-bold text-blue-800">
-                    Deleted By
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-bold text-blue-800">
-                    Deleted On
-                  </th>
-                  <th className="px-4 py-2 text-center text-sm font-bold text-blue-800">
-                    Actions
-                  </th>
+                  <th className="px-4 py-2 text-left text-sm font-bold text-blue-800">File Name</th>
+                  <th className="px-4 py-2 text-left text-sm font-bold text-blue-800">Deleted By</th>
+                  <th className="px-4 py-2 text-left text-sm font-bold text-blue-800">Deleted On</th>
+                  <th className="px-4 py-2 text-center text-sm font-bold text-blue-800">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {sortedArchives.map((archive) => (
+                {archives.map((archive) => (
                   <tr key={archive.id} className="border-t hover:bg-blue-50">
-                    <td className="px-4 py-2 text-sm text-gray-800 truncate">
-                      {archive.file_name}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">
-                      {archive.deleted_by}
-                    </td>
+                    <td className="px-4 py-2 text-sm text-gray-800 truncate">{archive.file_name}</td>
+                    <td className="px-4 py-2 text-sm text-gray-600">{archive.deleted_by}</td>
                     <td className="px-4 py-2 text-sm text-gray-600">
                       {new Date(archive.deleted_at).toLocaleString()}
                     </td>
                     <td className="px-4 py-2 text-center">
                       <button
-                        className="text-sm text-green-600 hover:underline mr-2"
-                        onClick={() => handleAction(archive.file_id, "restore")}
-                        disabled={loading}
+                        className={`text-sm text-green-600 hover:underline mr-2 ${
+                          processingId === archive.id ? "opacity-50 pointer-events-none" : ""
+                        }`}
+                        onClick={() => handleRestore(archive.id, archive.file_name)}
+                        disabled={processingId === archive.id}
                       >
-                        Restore
+                        {processingId === archive.id ? "Processing..." : "Restore"}
                       </button>
                       <button
-                        className="text-sm text-red-600 hover:underline"
-                        onClick={() => handleAction(archive.file_id, "delete")}
-                        disabled={loading}
+                        className={`text-sm text-red-600 hover:underline ${
+                          processingId === archive.id ? "opacity-50 pointer-events-none" : ""
+                        }`}
+                        onClick={() => handleDelete(archive.id, archive.file_name)}
+                        disabled={processingId === archive.id}
                       >
-                        Delete
+                        {processingId === archive.id ? "Processing..." : "Delete"}
                       </button>
                     </td>
                   </tr>

@@ -1,5 +1,5 @@
-import db from "../../lib/db";
-import fs from "fs";
+import db from "../../lib/db"; 
+import fs from "fs"; 
 import path from "path";
 
 export default async function handler(req, res) {
@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       // Fetch all files currently in the recycle bin
       const [archives] = await db.query(
-        "SELECT id, file_name, file_path, deleted_by, deleted_at, consultation_type FROM files WHERE recycle_bin = 1 ORDER BY deleted_at DESC"
+        "SELECT id, file_name, file_path, deleted_by, deleted_at FROM files WHERE recycle_bin = 1 ORDER BY deleted_at DESC"
       );
       return res.status(200).json(archives);
     }
@@ -29,18 +29,13 @@ export default async function handler(req, res) {
 
       const { action, file_id } = body;
 
-      // Log missing parameters explicitly
-      if (!action) console.error("Missing action parameter");
-      if (!file_id) console.error("Missing file_id parameter");
-
       if (!action || !file_id) {
-        return res.status(400).json({ error: "Missing required parameters" });
+        return res.status(400).json({ error: "Missing required parameters: action or file_id" });
       }
 
       // Fetch file details from the database
       const [fileResult] = await db.query("SELECT * FROM files WHERE id = ?", [file_id]);
       if (fileResult.length === 0) {
-        console.error("File not found");
         return res.status(404).json({ error: "File not found" });
       }
 
@@ -49,7 +44,6 @@ export default async function handler(req, res) {
       const originalPath = path.join(process.cwd(), "public", file.file_path);
 
       if (action === "restore") {
-        // Move the file back to its original location
         try {
           if (fs.existsSync(recycleBinPath)) {
             const originalDir = path.dirname(originalPath);
@@ -57,9 +51,8 @@ export default async function handler(req, res) {
               fs.mkdirSync(originalDir, { recursive: true });
             }
             fs.renameSync(recycleBinPath, originalPath);
-            console.log(`File restored to its original path: ${originalPath}`);
+            console.log(`File restored to: ${originalPath}`);
           } else {
-            console.error("File not found in recycle bin");
             return res.status(404).json({ error: "File not found in recycle bin" });
           }
         } catch (err) {
@@ -67,31 +60,26 @@ export default async function handler(req, res) {
           return res.status(500).json({ error: "Error restoring file", details: err.message });
         }
 
-        // Update the `files` table to mark the file as active
-        await db.query(
-          "UPDATE files SET recycle_bin = 0, deleted_by = NULL, deleted_at = NULL WHERE id = ?",
-          [file_id]
-        );
+        // Update database to mark file as active
+        await db.query("UPDATE files SET recycle_bin = 0, deleted_by = NULL, deleted_at = NULL WHERE id = ?", [file_id]);
 
         return res.status(200).json({ message: "File restored successfully" });
       }
 
       if (action === "delete") {
-        // Permanently delete the file
         try {
           if (fs.existsSync(recycleBinPath)) {
             fs.unlinkSync(recycleBinPath);
             console.log(`File permanently deleted: ${recycleBinPath}`);
           } else {
-            console.error("File not found in recycle bin for permanent deletion");
             return res.status(404).json({ error: "File not found in recycle bin" });
           }
         } catch (err) {
-          console.error("Error deleting file permanently:", err);
+          console.error("Error deleting file:", err);
           return res.status(500).json({ error: "Error deleting file", details: err.message });
         }
 
-        // Permanently delete the file record from the database
+        // Delete file record from database
         await db.query("DELETE FROM files WHERE id = ?", [file_id]);
 
         return res.status(200).json({ message: "File deleted permanently" });
