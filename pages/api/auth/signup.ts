@@ -4,6 +4,8 @@ import pool from '../../../lib/db';
 import multer from 'multer';
 import path from 'path';
 import { IncomingMessage, ServerResponse } from 'http';
+import { RowDataPacket } from 'mysql2';
+import type { RequestHandler } from 'express'; // ✅ For multer middleware compatibility
 
 // Define Multer file type manually
 interface MulterFile {
@@ -23,10 +25,17 @@ interface MulterNextApiRequest extends NextApiRequest {
   file: MulterFile;
 }
 
+// Define user row type from DB
+interface UserRow extends RowDataPacket {
+  id: number;
+  username: string;
+  email: string;
+}
+
 // Set up multer to handle file uploads
 const upload = multer({
   storage: multer.diskStorage({
-    destination: './public/uploads', // Make sure this folder exists
+    destination: './public/uploads', // Ensure this folder exists
     filename: (req, file, cb) => {
       const { firstname, lastname } = req.body as Record<string, string>;
       const fileExtension = path.extname(file.originalname);
@@ -38,24 +47,28 @@ const upload = multer({
 
 const uploadMiddleware = upload.single('profilePicture');
 
-// Utility function to run middleware in Next.js API routes
-async function runMiddleware(req: IncomingMessage, res: ServerResponse, fn: Function) {
+// ✅ Properly typed runMiddleware compatible with Express-style middleware
+async function runMiddleware(
+  req: IncomingMessage,
+  res: ServerResponse,
+  fn: RequestHandler
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    fn(req, res, (result: any) => {
+    fn(req as any, res as any, (result?: unknown) => {
       if (result instanceof Error) return reject(result);
-      return resolve(result);
+      return resolve();
     });
   });
 }
 
-// Main API handler
+// ✅ Main API handler
 export default async function handler(req: MulterNextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Run the upload middleware to handle the file upload
+    // Run the upload middleware to handle file upload
     await runMiddleware(req, res, uploadMiddleware);
 
     const { firstname, lastname, position, username, email, password } = req.body;
@@ -65,7 +78,7 @@ export default async function handler(req: MulterNextApiRequest, res: NextApiRes
     }
 
     // Check if user already exists
-    const [existingUser]: any = await pool.query(
+    const [existingUser] = await pool.query<UserRow[]>(
       'SELECT * FROM users WHERE username = ? OR email = ?',
       [username, email]
     );
@@ -84,7 +97,7 @@ export default async function handler(req: MulterNextApiRequest, res: NextApiRes
       profilePicturePath = `/uploads/${req.file.filename}`;
     }
 
-    // Insert user data into database
+    // Insert user data into the database
     await pool.query(
       'INSERT INTO users (firstname, lastname, position, username, email, password_hash, role, profile_picture) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [firstname, lastname, position, username, email, passwordHash, 'admin', profilePicturePath]
@@ -97,7 +110,7 @@ export default async function handler(req: MulterNextApiRequest, res: NextApiRes
   }
 }
 
-// Important: disable default body parser so multer can handle multipart/form-data
+// ✅ Disable default body parser so multer can handle multipart/form-data
 export const config = {
   api: {
     bodyParser: false,

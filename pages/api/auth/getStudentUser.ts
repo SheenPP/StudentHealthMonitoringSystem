@@ -6,30 +6,44 @@ import { parse } from "cookie";
 
 const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
 
+// ✅ Define the expected payload structure
+interface JwtPayload {
+  studentId: number;
+}
+
+// ✅ Define the structure of student rows returned from DB
+interface StudentRow extends RowDataPacket {
+  student_id: number;
+  first_name: string;
+  middle_name: string;
+  last_name: string;
+  email: string;
+  status: string;
+  created_at: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    // 🛡 Extract token from HTTP-only cookies
     const cookies = parse(req.headers.cookie || "");
-    const token = cookies.studentAuthToken; // Match cookie name from login API
+    const token = cookies.studentAuthToken;
 
     if (!token) {
       return res.status(401).json({ error: "Unauthorized. No token provided." });
     }
 
-    // 🔑 Verify and decode JWT
-    const decoded: any = jwt.verify(token, SECRET_KEY);
-    const studentId = decoded.studentId; // Ensure correct ID
+    // ✅ Replace `any` with proper JwtPayload type
+    const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload;
+    const studentId = decoded.studentId;
 
     if (!studentId) {
       return res.status(401).json({ error: "Invalid token payload." });
     }
 
-    // 🛢 Fetch student details from the database
-    const [students] = await pool.query<RowDataPacket[]>(
+    const [students] = await pool.query<StudentRow[]>(
       "SELECT student_id, first_name, middle_name, last_name, email, status, created_at FROM studentaccount WHERE student_id = ?",
       [studentId]
     );
@@ -40,7 +54,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const student = students[0];
 
-    // ✅ Return student details (excluding password)
     return res.status(200).json({
       student_id: student.student_id,
       first_name: student.first_name,
@@ -55,4 +68,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 }
- 

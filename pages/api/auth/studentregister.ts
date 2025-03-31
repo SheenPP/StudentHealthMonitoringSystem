@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
 import pool from "../../../lib/db";
+import { RowDataPacket, ResultSetHeader } from "mysql2";
 
 // Email validation regex
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -9,6 +10,12 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$
 // Name validation (letters, spaces, dashes, and dots allowed)
 const nameRegex = /^[a-zA-Z\s\-.]+$/;
 
+// ✅ Type for checking existing student
+interface ExistingStudentRow extends RowDataPacket {
+  student_id: string;
+  email: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed. Use POST." });
@@ -16,12 +23,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { studentId, firstName, middleName, lastName, email, password } = req.body;
 
-  // 🛡 **Validate Required Fields**
+  // 🛡 Validate Required Fields
   if (!studentId || !firstName || !lastName || !email || !password) {
     return res.status(400).json({ error: "All required fields must be provided." });
   }
 
-  // ✅ **Validate Input Formats**
+  // ✅ Validate Input Formats
   if (!emailRegex.test(email)) {
     return res.status(400).json({ error: "Invalid email format." });
   }
@@ -38,31 +45,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // 🔍 **Check if the student ID or email already exists**
-    const [existingStudent] = await pool.query(
+    // 🔍 Check if the student ID or email already exists
+    const [existingStudent] = await pool.query<ExistingStudentRow[]>(
       "SELECT student_id, email FROM studentaccount WHERE student_id = ? OR email = ?",
       [studentId, email]
     );
 
-    if ((existingStudent as any).length > 0) {
+    if (existingStudent.length > 0) {
       return res.status(409).json({ error: "Student ID or email already exists." });
     }
 
-    // 🔒 **Hash the password before storing**
+    // 🔒 Hash the password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // 📌 **Insert the new student into the database with status as 'pending'**
-    const [result] = await pool.query(
+    // 📌 Insert the new student into the database
+    const [result] = await pool.query<ResultSetHeader>(
       `INSERT INTO studentaccount (student_id, first_name, middle_name, last_name, email, password_hash, status) 
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
       [studentId, firstName, middleName || null, lastName, email, hashedPassword]
     );
 
-    if ((result as any).affectedRows === 0) {
+    if (result.affectedRows === 0) {
       return res.status(500).json({ error: "Registration failed. Please try again." });
     }
 
-    // 🎉 **Success Response**
+    // 🎉 Success
     return res.status(201).json({ message: "Student registered successfully. Awaiting approval." });
   } catch (error) {
     console.error("Error registering student:", error);

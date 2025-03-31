@@ -1,6 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import bcrypt from 'bcryptjs';
 import pool from '../../../lib/db';
+import { RowDataPacket } from 'mysql2';
+
+// ✅ Define the shape of the returned user row
+interface UserRow extends RowDataPacket {
+  id: number;
+  username: string;
+  password_hash: string;
+  role: string;
+  position: string;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { username, password, role, position } = req.body;
@@ -14,7 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const [existingUser]: any = await pool.query(
+    // ✅ Type-safe query result
+    const [existingUser] = await pool.query<UserRow[]>(
       'SELECT * FROM users WHERE username = ?',
       [username]
     );

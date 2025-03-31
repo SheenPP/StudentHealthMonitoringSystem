@@ -1,6 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
-import pool from "../../../lib/db"; // Your MySQL connection setup
+import pool from "../../../lib/db";
+import { RowDataPacket } from "mysql2"; // ✅ Import
+
+// ✅ Define expected row structure
+interface AdminRow extends RowDataPacket {
+  id: number;
+  full_name: string;
+  email: string;
+  password: string;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { fullName, email, password } = req.body;
@@ -14,8 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Check if the email already exists
-    const [existingAdmin]: any = await pool.query(
+    // ✅ Type-safe query
+    const [existingAdmin] = await pool.query<AdminRow[]>(
       "SELECT * FROM admin_accounts WHERE email = ?",
       [email]
     );
@@ -24,10 +33,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(409).json({ error: "Email already exists" });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Insert the new admin into the database
     await pool.query(
       "INSERT INTO admin_accounts (full_name, email, password) VALUES (?, ?, ?)",
       [fullName, email, hashedPassword]

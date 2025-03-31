@@ -3,6 +3,15 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pool from "../../../lib/db";
 import { serialize } from "cookie";
+import { RowDataPacket } from "mysql2";
+
+// ✅ Define expected student row shape
+interface StudentRow extends RowDataPacket {
+  student_id: number;
+  email: string;
+  password_hash: string;
+  status: string;
+}
 
 const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
 
@@ -18,7 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const [students]: any = await pool.query(
+    // ✅ Typed query result
+    const [students] = await pool.query<StudentRow[]>(
       "SELECT * FROM studentaccount WHERE student_id = ? OR email = ?",
       [identifier, identifier]
     );
@@ -49,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("Set-Cookie", serialize("studentAuthToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict", // ✅ FIXED
+      sameSite: "strict",
       maxAge: 3600,
       path: "/",
     }));
