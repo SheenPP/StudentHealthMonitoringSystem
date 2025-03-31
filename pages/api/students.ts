@@ -24,6 +24,26 @@ export const config = {
   },
 };
 
+// Define the request type with Multer's file and expected body
+interface MulterRequest extends NextApiRequest {
+  file?: Express.Multer.File;
+  body: {
+    student_id: string;
+    gender: string;
+    department: string;
+    date_of_birth: string;
+    phone_number: string;
+    present_address: string;
+    home_address: string;
+    year: string;
+    course: string;
+    medical_history: string;
+    emergency_contact_name: string;
+    emergency_contact_relation: string;
+    emergency_contact_phone: string;
+  };
+}
+
 // Student row interface
 interface StudentRow extends RowDataPacket {
   student_id: string;
@@ -62,7 +82,7 @@ const apiRoute = nextConnect<NextApiRequest, NextApiResponse>({
 apiRoute.use(upload.single('student_photo'));
 
 // POST - Create student with photo
-apiRoute.post(async (req: any, res) => {
+apiRoute.post(async (req: MulterRequest, res: NextApiResponse) => {
   const {
     student_id,
     gender,

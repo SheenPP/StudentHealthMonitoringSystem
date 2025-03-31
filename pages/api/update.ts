@@ -3,7 +3,7 @@ import pool from '../../lib/db';
 import { getCookie } from 'cookies-next';
 import fs from 'fs';
 import path from 'path';
-import { IncomingForm, type Fields, type Files } from 'formidable';
+import { IncomingForm, type Fields } from 'formidable';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 export const config = {
@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'POST') {
       const form = new IncomingForm();
 
-      form.parse(req, async (err: Error | null, fields: Fields, _files: Files) => {
+      form.parse(req, async (err: Error | null, fields: Fields) => {
         if (err) {
           return res.status(500).json({ error: 'Error parsing form data', details: err.message });
         }

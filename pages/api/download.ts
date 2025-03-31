@@ -5,7 +5,7 @@ import { promisify } from 'util';
 import mime from 'mime-types';
 import pool from '../../lib/db';
 import { getCookie } from 'cookies-next';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { RowDataPacket } from 'mysql2'; // ✅ Cleaned: Removed unused ResultSetHeader
 
 const stat = promisify(fs.stat);
 
