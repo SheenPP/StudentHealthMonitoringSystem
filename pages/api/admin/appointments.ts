@@ -1,5 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import db from "../../../lib/db"; // Import MySQL connection
+import type { RowDataPacket } from "mysql2";
+
+type AppointmentApproval = {
+  admin_approval: string;
+  user_approval: string;
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -34,8 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: "Missing appointment ID or admin approval status" });
       }
 
-      // Fetch current appointment details
-      const [existingAppointments]: any = await db.query(
+      // ✅ Properly typed DB query result
+      const [existingAppointments] = await db.query<AppointmentApproval[] & RowDataPacket[]>(
         "SELECT admin_approval, user_approval FROM appointments WHERE id = ?",
         [id]
       );
@@ -44,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(404).json({ error: "Appointment not found" });
       }
 
-      let currentUserApproval = existingAppointments[0].user_approval;
+      const currentUserApproval = existingAppointments[0].user_approval;
       let newStatus = "pending";
 
       // If either the admin or user approves, set status to "approved"

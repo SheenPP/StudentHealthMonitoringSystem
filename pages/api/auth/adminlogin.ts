@@ -1,10 +1,23 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import pool from "../../../lib/db";
+import pool from "../../../lib/db"; // Ensure this works in serverless (see tip below)
 import { serialize } from "cookie";
+import { RowDataPacket, FieldPacket } from "mysql2";
 
+// 🔐 Use environment variable for JWT
 const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
+
+// ✅ Admin type extending RowDataPacket for compatibility with mysql2
+interface Admin extends RowDataPacket {
+  admin_id: number;
+  username: string;
+  email: string;
+  password_hash: string;
+  role: string;
+  position: string;
+  status: string;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -18,19 +31,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Query the database for the admin
-    const [admin] = await pool.query(
+    // ✅ Typed MySQL query
+    const [admin] = await pool.query<Admin[]>(
       "SELECT admin_id, username, email, password_hash, role, position, status FROM admin_accounts WHERE username = ?",
       [username]
-    ) as [Array<{
-      admin_id: number;
-      username: string;
-      email: string;
-      password_hash: string;
-      role: string;
-      position: string;
-      status: string;
-    }>, any];
+    ) as [Admin[], FieldPacket[]];
 
     if (admin.length === 0) {
       return res.status(401).json({ error: "Invalid username or password" });
@@ -38,18 +43,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const adminData = admin[0];
 
-    // Check approval status
     if (adminData.status !== "approved") {
       return res.status(403).json({ error: "Your account is pending approval" });
     }
 
-    // Validate password
     const isMatch = await bcrypt.compare(password, adminData.password_hash);
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
-    // Create JWT
     const token = jwt.sign(
       {
         adminId: adminData.admin_id,
@@ -62,13 +64,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { expiresIn: "2h" }
     );
 
-    // Set cookie
     const cookie = serialize("adminAuthToken", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict", // ✅ lowercase fix
+      sameSite: "strict",
       path: "/",
-      maxAge: 2 * 60 * 60,
+      maxAge: 2 * 60 * 60, // 2 hours
     });
 
     res.setHeader("Set-Cookie", cookie);

@@ -1,5 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import pool from "../../lib/db"; // Adjust path based on your project structure
+import pool from "../../lib/db";
+import { RowDataPacket } from "mysql2";
+
+// Define the shape of a file row
+interface FileRow extends RowDataPacket {
+  id: number;
+  file_name: string;
+  file_path: string;
+  upload_date: string; // or `Date` if you prefer
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -9,8 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     console.log("✅ Fetching all files...");
 
-    // Fetch files from the database, including upload_date
-    const [rows]: any = await pool.query(
+    const [rows] = await pool.query<FileRow[]>(
       "SELECT id, file_name, file_path, upload_date FROM files WHERE deleted_at IS NULL OR recycle_bin = 0"
     );
 
@@ -21,8 +29,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     return res.status(200).json({ files: rows });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Error fetching files:", error);
-    return res.status(500).json({ error: error.message || "Internal Server Error" });
+    if (error instanceof Error) {
+      return res.status(500).json({ error: error.message });
+    }
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 }

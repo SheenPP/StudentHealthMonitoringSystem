@@ -1,11 +1,19 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import db from "../../lib/db"; // Import MySQL connection
+import { RowDataPacket } from "mysql2"; // For query typing
+
+// Define expected structure of appointment row for PUT logic
+interface AppointmentStatus extends RowDataPacket {
+  admin_approval: string;
+  user_approval: string;
+  status: string;
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (req.method === "GET") {
       // Fetch appointments with student first and last names
-      const [appointments] = await db.query(`
+      const [appointments] = await db.query<RowDataPacket[]>(`
         SELECT 
           a.id, 
           a.student_id, 
@@ -35,8 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Fetch current appointment status
-      const [existingAppointments]: any = await db.query(
-        "SELECT admin_approval, user_approval FROM appointments WHERE id = ?",
+      const [existingAppointments] = await db.query<AppointmentStatus[]>(
+        "SELECT admin_approval, user_approval, status FROM appointments WHERE id = ?",
         [id]
       );
 
@@ -60,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         approvedBy = approvedBy ? "both" : "user"; // If admin already approved, mark both
       }
 
-      // Mark the status as "approved" if either admin or user approves
+      // Mark status as "approved" if either admin or user approves
       if (currentAdminApproval === "approved" || currentUserApproval === "approved") {
         newStatus = "approved";
       }
