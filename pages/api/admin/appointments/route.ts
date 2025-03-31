@@ -50,7 +50,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Missing admin approval status" }, { status: 400 });
     }
 
-    // ✅ Fetch current appointment details
+    // ✅ Correctly typed DB query result
     const [rows] = await db.query<AppointmentApproval[] & RowDataPacket[]>(
       "SELECT admin_approval, user_approval FROM appointments WHERE id = ?",
       [id]
