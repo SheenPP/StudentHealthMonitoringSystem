@@ -4,10 +4,11 @@ import { getCookie } from 'cookies-next';
 import fs from 'fs';
 import path from 'path';
 import { IncomingForm } from 'formidable';
+import { RowDataPacket, OkPacket } from 'mysql2';
 
 export const config = {
   api: {
-    bodyParser: false, // let formidable handle the form data
+    bodyParser: false,
   },
 };
 
@@ -15,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     console.log('Request method:', req.method);
 
-    const rawUserId = await getCookie('user_id', { req, res });
+    const rawUserId = getCookie('user_id', { req, res });
     const userId = rawUserId ? String(rawUserId) : null;
     console.log('Resolved user ID from cookie:', userId);
 
@@ -24,36 +25,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Authorization token is required' });
     }
 
-    const [userResult] = await pool.query(
+    const [userResult] = await pool.query<RowDataPacket[]>(
       'SELECT username FROM users WHERE id = ?',
       [userId]
-    ) as [Array<{ username: string }>, any];
+    );
 
     if (userResult.length === 0) {
       console.error(`Invalid user for ID: ${userId}`);
       return res.status(401).json({ error: 'Invalid user' });
     }
 
-    const username = userResult[0].username;
+    const username = (userResult as RowDataPacket[])[0].username;
     console.log('Resolved username:', username);
 
     if (req.method === 'POST') {
       const form = new IncomingForm();
 
-      form.parse(req, async (err, fields, files) => {
+      form.parse(req, async (err, fields) => {
         if (err) {
           console.error('Error parsing form data:', err);
           return res.status(500).json({ error: 'Error parsing form data', details: (err as Error).message });
         }
 
-        // helper to safely extract field values
         const getSingleField = (value: string | string[] | undefined): string => {
           if (Array.isArray(value)) return value[0];
           return value ?? '';
         };
 
         const file_id = getSingleField(fields.file_id);
-        const file_path = getSingleField(fields.file_path);
         const student_id = getSingleField(fields.student_id);
         const consultation_type = getSingleField(fields.consultation_type);
 
@@ -61,16 +60,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return res.status(400).json({ error: 'File ID is required' });
         }
 
-        const [fileResult] = await pool.query(
+        const [fileResult] = await pool.query<RowDataPacket[]>(
           'SELECT * FROM files WHERE id = ?',
           [file_id]
-        ) as [Array<{ id: number; file_name: string; file_path: string }>, any];
+        );
 
         if (fileResult.length === 0) {
           return res.status(404).json({ error: 'File not found' });
         }
 
-        const file = fileResult[0];
+        const file = fileResult[0] as {
+          id: number;
+          file_name: string;
+          file_path: string;
+        };
+
         const filePath = path.join(process.cwd(), 'public', file.file_path);
 
         const recycleBinDir = path.join(process.cwd(), 'public', 'recycle_bin');
@@ -90,29 +94,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Update file record
-        const updateQuery = `
-          UPDATE files
-          SET deleted_by = ?, deleted_at = NOW(), file_path = ?, recycle_bin = 1
-          WHERE id = ?
-        `;
-        const updateValues = [username, `recycle_bin/${path.basename(filePath)}`, file_id];
-        await pool.query(updateQuery, updateValues);
+        await pool.query<OkPacket>(
+          `UPDATE files SET deleted_by = ?, deleted_at = NOW(), file_path = ?, recycle_bin = 1 WHERE id = ?`,
+          [username, `recycle_bin/${path.basename(filePath)}`, file_id]
+        );
 
         // Insert into file history
-        const historyQuery = `
-          INSERT INTO file_history (file_id, student_id, action, user, timestamp, file_name, consultation_type)
-          VALUES (?, ?, 'Moved to Recycle Bin', ?, NOW(), ?, ?)
-        `;
-        const historyValues = [file_id, student_id, username, file.file_name, consultation_type];
-        await pool.query(historyQuery, historyValues);
+        await pool.query<OkPacket>(
+          `INSERT INTO file_history (file_id, student_id, action, user, timestamp, file_name, consultation_type)
+           VALUES (?, ?, 'Moved to Recycle Bin', ?, NOW(), ?, ?)`,
+          [file_id, student_id, username, file.file_name, consultation_type]
+        );
 
         // Insert into recycle_bin table
-        const recycleBinQuery = `
-          INSERT INTO recycle_bin (file_id, file_name, deleted_by, deleted_at)
-          VALUES (?, ?, ?, NOW())
-        `;
-        const recycleBinValues = [file_id, file.file_name, username];
-        await pool.query(recycleBinQuery, recycleBinValues);
+        await pool.query<OkPacket>(
+          `INSERT INTO recycle_bin (file_id, file_name, deleted_by, deleted_at) VALUES (?, ?, ?, NOW())`,
+          [file_id, file.file_name, username]
+        );
 
         return res.status(200).json({ message: 'File moved to recycle bin successfully' });
       });

@@ -31,10 +31,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     maxFileSize: 5 * 1024 * 1024, // 5MB
   });
 
-  form.parse(req, async (err: any, fields: formidable.Fields, files: Files) => {
+  form.parse(req, async (err: unknown, fields: formidable.Fields, files: Files) => {
     if (err) {
-      console.error("Formidable parse error:", err);
-      return res.status(500).json({ error: "File upload error", details: err.message });
+      const parseError = err as Error;
+      console.error("Formidable parse error:", parseError);
+      return res.status(500).json({ error: "File upload error", details: parseError.message });
     }
 
     let file = files.file as File | File[] | undefined;
@@ -51,7 +52,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: "Invalid file" });
     }
 
-    // Generate new filename
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const fileExtension = path.extname(file.originalFilename);
     const newFileName = `${timestamp}${fileExtension}`;
@@ -67,9 +67,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ]);
 
       return res.status(200).json({ success: true, imageUrl: relativePath });
-    } catch (error: any) {
-      console.error("File processing error:", error);
-      return res.status(500).json({ error: "File processing error", details: error.message });
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error("File processing error:", err);
+      return res.status(500).json({ error: "File processing error", details: err.message });
     }
   });
 }

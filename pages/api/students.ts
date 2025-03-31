@@ -3,6 +3,7 @@ import nextConnect from 'next-connect';
 import multer from 'multer';
 import path from 'path';
 import pool from '../../lib/db';
+import { RowDataPacket, OkPacket } from 'mysql2';
 
 // Configure Multer storage
 const upload = multer({
@@ -16,14 +17,36 @@ const upload = multer({
   }),
 });
 
-// Disable body parsing so Multer can handle it
+// Disable body parsing so Multer can handle file
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// Initialize nextConnect handler
+// Student row interface
+interface StudentRow extends RowDataPacket {
+  student_id: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  email: string;
+  gender: string;
+  department: string;
+  date_of_birth: string;
+  phone_number: string;
+  present_address: string;
+  home_address: string;
+  year: string;
+  course: string;
+  medical_history: string;
+  emergency_contact_name: string;
+  emergency_contact_relation: string;
+  emergency_contact_phone: string;
+  photo_path: string | null;
+}
+
+// Initialize handler
 const apiRoute = nextConnect<NextApiRequest, NextApiResponse>({
   onError(error, req, res) {
     const err = error as Error;
@@ -82,7 +105,7 @@ apiRoute.post(async (req: any, res) => {
     );
 
     res.status(201).json({ message: 'Student record added successfully!' });
-  } catch (error) {
+  } catch (error: unknown) {
     const err = error as Error;
     console.error(err);
     res.status(500).json({ message: 'Error saving student record.', error: err.message });
@@ -94,10 +117,8 @@ apiRoute.get(async (req: NextApiRequest, res: NextApiResponse) => {
   const studentId = req.query.id as string | undefined;
 
   try {
-    let rows;
-
     if (studentId) {
-      const [result]: any = await pool.query(
+      const [result] = await pool.query<StudentRow[]>(
         `SELECT sa.student_id, sa.first_name, sa.middle_name, sa.last_name, sa.email,
                 s.gender, s.department, s.date_of_birth, s.phone_number, s.present_address, 
                 s.home_address, s.year, s.course, s.medical_history, s.emergency_contact_name, 
@@ -107,13 +128,14 @@ apiRoute.get(async (req: NextApiRequest, res: NextApiResponse) => {
          WHERE sa.student_id = ?`,
         [studentId]
       );
-      rows = result;
-      if (rows.length === 0) {
+
+      if (result.length === 0) {
         return res.status(404).json({ message: 'Student not found.' });
       }
-      res.status(200).json(rows[0]);
+
+      res.status(200).json(result[0]);
     } else {
-      const [result]: any = await pool.query(
+      const [result] = await pool.query<StudentRow[]>(
         `SELECT sa.student_id, sa.first_name, sa.middle_name, sa.last_name, sa.email,
                 s.gender, s.department, s.date_of_birth, s.phone_number, s.present_address, 
                 s.home_address, s.year, s.course, s.medical_history, s.emergency_contact_name, 
@@ -121,9 +143,10 @@ apiRoute.get(async (req: NextApiRequest, res: NextApiResponse) => {
          FROM studentaccount sa
          LEFT JOIN students s ON sa.student_id = s.student_id`
       );
+
       res.status(200).json(result);
     }
-  } catch (error) {
+  } catch (error: unknown) {
     const err = error as Error;
     console.error(err);
     res.status(500).json({ message: 'Error fetching student data.', error: err.message });
@@ -150,7 +173,7 @@ apiRoute.put(async (req: NextApiRequest, res: NextApiResponse) => {
   } = req.body as Record<string, string>;
 
   try {
-    const [result]: any = await pool.query(
+    const [result] = await pool.query<OkPacket>(
       `UPDATE students SET 
         gender = ?, department = ?, date_of_birth = ?, phone_number = ?, 
         present_address = ?, home_address = ?, year = ?, course = ?, 
@@ -179,7 +202,7 @@ apiRoute.put(async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     res.status(200).json({ message: 'Student record updated successfully!' });
-  } catch (error) {
+  } catch (error: unknown) {
     const err = error as Error;
     console.error(err);
     res.status(500).json({ message: 'Error updating student record.', error: err.message });

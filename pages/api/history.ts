@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import pool from '../../lib/db';
+import { RowDataPacket } from 'mysql2';
 
-interface FileHistoryRecord {
+interface FileHistoryRecord extends RowDataPacket {
   action: string;
   user: string;
   timestamp: string;
@@ -27,8 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ORDER BY timestamp DESC;
     `;
 
-    const result = await pool.query(query, [studentId]);
-    const rows = result[0] as FileHistoryRecord[];
+    const [rows] = await pool.query<FileHistoryRecord[]>(query, [studentId]);
 
     console.log('Fetched history:', rows);
 
@@ -37,8 +37,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     return res.status(200).json(rows);
-  } catch (error: any) {
-    console.error('Error fetching file history:', error);
-    return res.status(500).json({ message: 'Error fetching file history', error: error.message });
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error fetching file history:', err);
+    return res.status(500).json({ message: 'Error fetching file history', error: err.message });
   }
 }

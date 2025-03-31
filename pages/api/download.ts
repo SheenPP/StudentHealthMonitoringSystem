@@ -5,8 +5,21 @@ import { promisify } from 'util';
 import mime from 'mime-types';
 import pool from '../../lib/db';
 import { getCookie } from 'cookies-next';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 const stat = promisify(fs.stat);
+
+interface UserRoleRow extends RowDataPacket {
+  role: string;
+}
+
+interface FileRow extends RowDataPacket {
+  id: number;
+  file_name: string;
+  consultation_type: string;
+  student_id: string;
+  // Add more fields if needed
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -17,8 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(405).json({ message: 'Method not allowed' });
     }
 
-    // Retrieve user_id from the cookie
-    const rawUserId = await getCookie('user_id', { req, res });
+    const rawUserId = getCookie('user_id', { req, res });
     const userId = rawUserId ? `${rawUserId}` : null;
 
     if (!userId) {
@@ -31,26 +43,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { consultation_type, filename } = req.query;
 
     if (!consultation_type || !filename) {
-      if (!consultation_type) {
-        console.error('Missing consultation type');
-      }
-      if (!filename) {
-        console.error('Missing filename');
-      }
+      if (!consultation_type) console.error('Missing consultation type');
+      if (!filename) console.error('Missing filename');
       return res.status(400).json({ error: 'Missing consultation type or filename' });
     }
 
-    // Sanitize and validate the consultation_type and filename
     const safeConsultationType = path.basename(consultation_type as string);
     const safeFilename = path.basename(filename as string);
     const filePath = path.join(process.cwd(), 'public', 'files', safeConsultationType, safeFilename);
 
-    console.log('Sanitized parameters:');
-    console.log('Consultation Type:', safeConsultationType);
-    console.log('Filename:', safeFilename);
-    console.log('File Path:', filePath);
+    console.log('Sanitized parameters:', safeConsultationType, safeFilename, filePath);
 
-    // Check if the file exists
     try {
       const fileStat = await stat(filePath);
       if (!fileStat.isFile()) {
@@ -62,13 +65,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'File not found' });
     }
 
-    // Retrieve user role
+    // ✅ Get user role
     let userRole: string;
     try {
-      const [userResult] = await pool.query(
+      const [userResult] = await pool.query<UserRoleRow[]>(
         'SELECT role FROM users WHERE id = ?',
         [userId]
-      ) as [Array<{ role: string }>, any];
+      );
 
       if (userResult.length === 0) {
         console.error(`Invalid user for ID: ${userId}`);
@@ -82,13 +85,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Database query error' });
     }
 
-    // If not admin, check file permission
+    // ✅ Check permission if not admin
     if (userRole !== 'admin') {
       try {
-        const [fileResult] = await pool.query(
+        const [fileResult] = await pool.query<FileRow[]>(
           `SELECT * FROM files WHERE file_name = ? AND consultation_type = ? AND student_id = ?`,
           [safeFilename, safeConsultationType, userId]
-        ) as [Array<any>, any];
+        );
 
         if (fileResult.length === 0) {
           console.error('Unauthorized access attempt by user:', userId);
@@ -102,7 +105,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // Set headers and send file
+    // ✅ Send the file
     const contentType = mime.lookup(filePath) || 'application/octet-stream';
     res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.setHeader('Content-Type', contentType);

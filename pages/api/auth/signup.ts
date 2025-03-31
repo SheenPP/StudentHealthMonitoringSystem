@@ -3,9 +3,8 @@ import bcrypt from 'bcryptjs';
 import pool from '../../../lib/db';
 import multer from 'multer';
 import path from 'path';
-import { IncomingMessage, ServerResponse } from 'http';
 import { RowDataPacket } from 'mysql2';
-import type { RequestHandler } from 'express'; // ✅ For multer middleware compatibility
+import { RequestHandler, Request as ExpressRequest, Response as ExpressResponse } from 'express';
 
 // Define Multer file type manually
 interface MulterFile {
@@ -35,7 +34,7 @@ interface UserRow extends RowDataPacket {
 // Set up multer to handle file uploads
 const upload = multer({
   storage: multer.diskStorage({
-    destination: './public/uploads', // Ensure this folder exists
+    destination: './public/uploads',
     filename: (req, file, cb) => {
       const { firstname, lastname } = req.body as Record<string, string>;
       const fileExtension = path.extname(file.originalname);
@@ -47,14 +46,14 @@ const upload = multer({
 
 const uploadMiddleware = upload.single('profilePicture');
 
-// ✅ Properly typed runMiddleware compatible with Express-style middleware
+// ✅ Lint-safe runMiddleware
 async function runMiddleware(
-  req: IncomingMessage,
-  res: ServerResponse,
+  req: ExpressRequest,
+  res: ExpressResponse,
   fn: RequestHandler
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    fn(req as any, res as any, (result?: unknown) => {
+    fn(req, res, (result?: unknown) => {
       if (result instanceof Error) return reject(result);
       return resolve();
     });
@@ -68,8 +67,7 @@ export default async function handler(req: MulterNextApiRequest, res: NextApiRes
   }
 
   try {
-    // Run the upload middleware to handle file upload
-    await runMiddleware(req, res, uploadMiddleware);
+    await runMiddleware(req as unknown as ExpressRequest, res as unknown as ExpressResponse, uploadMiddleware);
 
     const { firstname, lastname, position, username, email, password } = req.body;
 
@@ -77,7 +75,6 @@ export default async function handler(req: MulterNextApiRequest, res: NextApiRes
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // Check if user already exists
     const [existingUser] = await pool.query<UserRow[]>(
       'SELECT * FROM users WHERE username = ? OR email = ?',
       [username, email]
@@ -87,17 +84,14 @@ export default async function handler(req: MulterNextApiRequest, res: NextApiRes
       return res.status(409).json({ error: 'Username or email already in use' });
     }
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Handle uploaded profile picture path
     let profilePicturePath = '';
     if (req.file) {
       profilePicturePath = `/uploads/${req.file.filename}`;
     }
 
-    // Insert user data into the database
     await pool.query(
       'INSERT INTO users (firstname, lastname, position, username, email, password_hash, role, profile_picture) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [firstname, lastname, position, username, email, passwordHash, 'admin', profilePicturePath]

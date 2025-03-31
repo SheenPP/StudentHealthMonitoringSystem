@@ -2,16 +2,17 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import jwt from "jsonwebtoken";
 import pool from "../../../lib/db";
 import { parse } from "cookie";
-import { RowDataPacket, FieldPacket } from "mysql2";
+import { RowDataPacket } from "mysql2";
 
+// ✅ Secret key for JWT verification
 const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
 
-// ✅ Type for the decoded token
+// ✅ Type for the decoded JWT payload
 interface JwtPayload {
   adminId: number;
 }
 
-// ✅ Type for the admin result row
+// ✅ Type for a row from the admin_accounts table
 interface AdminRow extends RowDataPacket {
   admin_id: number;
   username: string;

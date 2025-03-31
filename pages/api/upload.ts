@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { IncomingForm, type Files, type Fields } from 'formidable';
+import { IncomingForm, type Files, type Fields, type File as FormidableFile } from 'formidable';
 import fs from 'fs';
 import path from 'path';
 import pool from '../../lib/db';
@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'POST') {
       const form = new IncomingForm();
 
-      form.parse(req, async (err: any, fields: Fields, files: Files) => {
+      form.parse(req, async (err: Error | null, fields: Fields, files: Files) => {
         if (err) {
           console.error('Error parsing file:', err);
           return res.status(500).json({ message: 'Error parsing file', error: err.message });
@@ -56,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
         if (files.file) {
-          const file = Array.isArray(files.file) ? files.file[0] : files.file;
+          const file = Array.isArray(files.file) ? files.file[0] : files.file as FormidableFile;
           const timestamp = Date.now();
           const fileExtension = path.extname(file.originalFilename || '.unknown');
           const fileName = `${student_id}_${consultationType}_${timestamp}${fileExtension}`;

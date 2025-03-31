@@ -5,21 +5,24 @@ import axios from "axios";
 import Sidebar from "../../components/AdminSidebar";
 import { useRouter } from "next/navigation";
 
+// Define Account type
+interface Account {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export default function AdminApprovals() {
-  const [pendingStudents, setPendingStudents] = useState([]);
-  const [pendingUsers, setPendingUsers] = useState([]);
-  const [pendingAdmins, setPendingAdmins] = useState([]);
+  const [pendingStudents, setPendingStudents] = useState<Account[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<Account[]>([]);
+  const [pendingAdmins, setPendingAdmins] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
-  useEffect(() => {
-    fetchPendingAccounts();
-  }, []);
 
   const fetchPendingAccounts = async () => {
     try {
       const response = await axios.get("/api/admin/getPendingAccounts", {
-        withCredentials: true, // Ensures cookies are sent automatically
+        withCredentials: true,
       });
 
       setPendingStudents(response.data.students);
@@ -27,18 +30,23 @@ export default function AdminApprovals() {
       setPendingAdmins(response.data.admins);
     } catch (error) {
       console.error("Error fetching pending accounts:", error);
-      router.push("/admin-login"); // Redirect if unauthorized
+      router.push("/admin-login");
     } finally {
       setLoading(false);
     }
   };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchPendingAccounts();
+  }, []);
 
   const updateStatus = async (id: number, type: string, status: string) => {
     try {
       await axios.put(
         "/api/admin/updateAccountStatus",
         { id, type, status },
-        { withCredentials: true } // Ensures cookies are sent with request
+        { withCredentials: true }
       );
 
       fetchPendingAccounts(); // Refresh data after update
@@ -70,15 +78,38 @@ export default function AdminApprovals() {
         <h1 className="text-2xl font-semibold">Pending Approvals</h1>
         <p className="text-gray-600 mt-2">Manage student, user, and admin approvals.</p>
 
-        <ApprovalTable title="Pending Students" data={pendingStudents} type="student" updateStatus={updateStatus} />
-        <ApprovalTable title="Pending Users" data={pendingUsers} type="user" updateStatus={updateStatus} />
-        <ApprovalTable title="Pending Admins" data={pendingAdmins} type="admin" updateStatus={updateStatus} />
+        <ApprovalTable
+          title="Pending Students"
+          data={pendingStudents}
+          type="student"
+          updateStatus={updateStatus}
+        />
+        <ApprovalTable
+          title="Pending Users"
+          data={pendingUsers}
+          type="user"
+          updateStatus={updateStatus}
+        />
+        <ApprovalTable
+          title="Pending Admins"
+          data={pendingAdmins}
+          type="admin"
+          updateStatus={updateStatus}
+        />
       </div>
     </div>
   );
 }
 
-const ApprovalTable = ({ title, data, type, updateStatus }: any) => {
+// Props interface for the approval table
+interface ApprovalTableProps {
+  title: string;
+  data: Account[];
+  type: string;
+  updateStatus: (id: number, type: string, status: string) => void;
+}
+
+const ApprovalTable = ({ title, data, type, updateStatus }: ApprovalTableProps) => {
   if (data.length === 0) return null;
 
   return (
@@ -94,7 +125,7 @@ const ApprovalTable = ({ title, data, type, updateStatus }: any) => {
           </tr>
         </thead>
         <tbody>
-          {data.map((item: any) => (
+          {data.map((item) => (
             <tr key={item.id}>
               <td className="border p-2">{item.id}</td>
               <td className="border p-2">{item.name}</td>
