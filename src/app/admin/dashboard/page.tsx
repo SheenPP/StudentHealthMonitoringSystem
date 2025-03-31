@@ -18,19 +18,16 @@ export default function AdminDashboard() {
     rejected: 0,
   });
 
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get("/api/auth/getAdminUser", {
+        await axios.get("/api/auth/getAdminUser", {
           withCredentials: true,
         });
-
-        setUser(response.data.user);
-      } catch (err) {
+      } catch {
         router.push("/admin/login"); // Redirect if not authenticated
       }
     };
@@ -38,9 +35,9 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
       try {
         const response = await axios.get("/api/admin/stats", {
-          withCredentials: true, // Ensures authentication cookies are sent
+          withCredentials: true,
         });
-        
+
         setAppointmentStats(response.data.appointmentStats);
         setUserStats(response.data.userStats);
       } catch (err) {
@@ -60,10 +57,8 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
       <div className="flex-1 p-8">
         <h1 className="text-3xl font-semibold text-gray-800">Admin Dashboard</h1>
         <p className="mt-2 text-gray-600">Manage appointments and users efficiently.</p>

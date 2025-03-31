@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/AdminSidebar";
-import { useRouter } from "next/navigation";
 import axios from "axios";
-import { format } from "date-fns"; // ✅ import for formatting
+import { format } from "date-fns";
 
 // Define an interface for appointments
 interface Appointment {
@@ -64,7 +63,6 @@ const SkeletonTable = () => {
 export default function AdminAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const router = useRouter();
 
   useEffect(() => {
     const fetchAppointments = async () => {

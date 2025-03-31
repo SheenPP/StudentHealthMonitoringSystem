@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import Sidebar from "../../components/AdminSidebar";
 import { useRouter } from "next/navigation";
@@ -19,7 +19,8 @@ export default function AdminApprovals() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchPendingAccounts = async () => {
+  // ✅ Memoize fetchPendingAccounts
+  const fetchPendingAccounts = useCallback(async () => {
     try {
       const response = await axios.get("/api/admin/getPendingAccounts", {
         withCredentials: true,
@@ -34,12 +35,12 @@ export default function AdminApprovals() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // ✅ No ESLint warning now
   useEffect(() => {
     fetchPendingAccounts();
-  }, []);
+  }, [fetchPendingAccounts]);
 
   const updateStatus = async (id: number, type: string, status: string) => {
     try {
@@ -48,7 +49,6 @@ export default function AdminApprovals() {
         { id, type, status },
         { withCredentials: true }
       );
-
       fetchPendingAccounts(); // Refresh data after update
     } catch (error) {
       console.error(`Error updating ${type} status:`, error);

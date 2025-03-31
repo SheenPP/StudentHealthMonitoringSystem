@@ -27,13 +27,16 @@ const AdminLogin = () => {
       await axios.post(
         "/api/auth/adminlogin",
         { username, password },
-        { withCredentials: true } // Sends HTTP-only cookie
+        { withCredentials: true }
       );
 
-      // Redirect to admin dashboard
       router.push("/admin/dashboard");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Invalid username or password");
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error || "Invalid username or password");
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
