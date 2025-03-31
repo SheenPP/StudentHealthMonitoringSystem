@@ -1,15 +1,15 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
 import { toast } from 'react-toastify';
-import { useOptions } from '../options/useOptions'; // Import the hook
+import { useOptions } from '../options/useOptions';
 import DepartmentSelect from '../options/DepartmentSelect';
 import CourseSelect from '../options/CourseSelect';
 import YearSelect from '../options/YearSelect';
 
 interface AddRecordProps {
   onAddSuccess: () => void;
-  onAddFailure: (errorType: string) => void; // Callback for failure
+  onAddFailure: (errorType: string) => void;
 }
 
 const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => {
@@ -31,7 +31,32 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
   const [emergencyContactPhone, setEmergencyContactPhone] = useState('');
   const [studentPhoto, setStudentPhoto] = useState<File | null>(null);
 
-  const { departments, coursesByDepartment, years } = useOptions(); // Use the hook
+  const { departments, coursesByDepartment, years } = useOptions();
+
+  useEffect(() => {
+    const fetchStudentInfo = async () => {
+      if (studentId.trim() === '') return;
+
+      try {
+        const res = await fetch(`/api/students?id=${studentId}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          setFirstName(data.first_name || '');
+          setLastName(data.last_name || '');
+          setEmail(data.email || '');
+        } else {
+          setFirstName('');
+          setLastName('');
+          setEmail('');
+        }
+      } catch (err) {
+        console.error('Error fetching student account:', err);
+      }
+    };
+
+    fetchStudentInfo();
+  }, [studentId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,21 +90,18 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
       });
 
       if (response.status === 409) {
-        // Handle duplicate entry
         onAddFailure('duplicate');
         return;
       }
 
-      if (!response.ok) {
-        throw new Error('Failed to add record');
-      }
+      if (!response.ok) throw new Error('Failed to add record');
 
       const result = await response.json();
-      console.log(result.message); // Handle success message
-      onAddSuccess(); // Notify parent component
+      console.log(result.message);
+      onAddSuccess();
     } catch (error) {
       console.error('Error adding student record:', error);
-      onAddFailure('general'); // Notify parent about a general failure
+      onAddFailure('general');
     }
   };
 
@@ -108,6 +130,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
             onChange={(e) => setFirstName(e.target.value)}
             className="border border-gray-300 rounded-md p-2 w-full"
             required
+            readOnly
           />
         </div>
         <div>
@@ -118,6 +141,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
             onChange={(e) => setLastName(e.target.value)}
             className="border border-gray-300 rounded-md p-2 w-full"
             required
+            readOnly
           />
         </div>
         <div>
@@ -180,6 +204,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
             onChange={(e) => setEmail(e.target.value)}
             className="border border-gray-300 rounded-md p-2 w-full"
             required
+            readOnly
           />
         </div>
         <div>

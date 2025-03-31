@@ -1,6 +1,6 @@
 import { Fragment, useState, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import { FiUpload, FiFileText, FiEdit, FiTrash, FiDownload } from 'react-icons/fi'; // Icons
+import { FiUpload, FiFileText, FiEdit, FiTrash, FiDownload } from 'react-icons/fi';
 import ConfirmationDialog from "./ConfirmationDialog";
 
 interface Consultation {
@@ -8,7 +8,7 @@ interface Consultation {
 }
 
 interface Student {
-  student_id: number;
+  student_id: string; // ✅ Fixed from number to string
   first_name: string;
   last_name: string;
   date_of_birth: string;
@@ -16,7 +16,7 @@ interface Student {
 }
 
 interface ConsultationCardsProps {
-  selectedStudent: Student | null; // Ensure it can be null initially
+  selectedStudent: Student | null;
 }
 
 const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }) => {
@@ -34,8 +34,8 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
   const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]); // Holds file objects
-  const [editingFile, setEditingFile] = useState<number | null>(null); // Store the file ID, not the path
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [editingFile, setEditingFile] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -45,7 +45,7 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
   const openModal = (consultation: Consultation) => {
     setSelectedConsultation(consultation);
     setIsOpen(true);
-    fetchUploadedFiles();  // Fetch files when opening the modal
+    fetchUploadedFiles();
   };
 
   const closeModal = () => {
@@ -75,9 +75,8 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
     formData.append('consultation_type', selectedConsultation.name);
 
     if (editingFile) {
-      // Append the correct file ID when updating
-      formData.append('file_id', editingFile.toString()); // This should be the actual file ID from the database
-      formData.append('new_file', file.name);  // Set the name of the new file
+      formData.append('file_id', editingFile.toString());
+      formData.append('new_file', file.name);
     }
 
     setLoading(true);
@@ -85,34 +84,21 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
     setSuccessMessage(null);
 
     try {
-      if (editingFile) {
-        // Update existing file
-        const updateResponse = await fetch('/api/update', {
-          method: 'POST',
-          body: formData,
-        });
+      const response = await fetch(editingFile ? '/api/update' : '/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-        if (!updateResponse.ok) {
-          throw new Error('File update failed');
-        }
-        setSuccessMessage('File updated successfully!');
-      } else {
-        // Handle new file upload
-        const uploadResponse = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!uploadResponse.ok) {
-          throw new Error('File upload failed');
-        }
-        setSuccessMessage('File uploaded successfully!');
+      if (!response.ok) {
+        throw new Error(editingFile ? 'File update failed' : 'File upload failed');
       }
+
+      setSuccessMessage(editingFile ? 'File updated successfully!' : 'File uploaded successfully!');
     } catch (error: any) {
       setError(error.message);
     } finally {
       setLoading(false);
-      await fetchUploadedFiles();  // Refresh uploaded files list after upload
+      await fetchUploadedFiles();
       closeModal();
     }
   };
@@ -127,7 +113,6 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
       }
 
       const result = await response.json();
-      console.log(result.files); // Log the files to see the structure
       setUploadedFiles(result.files || []);
     } catch (error: any) {
       setError('No files found');
@@ -136,8 +121,8 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
   };
 
   const handleEdit = (fileId: number) => {
-    setEditingFile(fileId);  // Use fileId directly
-    setIsOpen(true);         // Open modal for editing file
+    setEditingFile(fileId);
+    setIsOpen(true);
   };
 
   const confirmDelete = (fileId: number, filePath: string) => {
@@ -158,9 +143,7 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
     try {
       const response = await fetch("/api/delete", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           file_id: fileToDelete.id,
           file_path: fileToDelete.path,
@@ -181,7 +164,7 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
       setError(error.message);
     } finally {
       setLoading(false);
-      fetchUploadedFiles(); // Refresh the uploaded files list
+      fetchUploadedFiles();
       setIsConfirmOpen(false);
     }
   };
@@ -210,14 +193,13 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
       link.click();
       link.parentNode?.removeChild(link);
     } catch (error: any) {
-      console.error("Download error:", error);
       setError('Error downloading file');
     }
   };
 
   useEffect(() => {
     if (isOpen && selectedConsultation) {
-      fetchUploadedFiles();  // Fetch files when modal is opened
+      fetchUploadedFiles();
     }
   }, [isOpen, selectedConsultation]);
 
@@ -324,6 +306,7 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
           </div>
         </Dialog>
       </Transition>
+
       <ConfirmationDialog
         isOpen={isConfirmOpen}
         title="Confirm Delete"

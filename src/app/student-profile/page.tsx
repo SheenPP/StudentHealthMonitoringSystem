@@ -52,9 +52,16 @@ const Record: React.FC = () => {
       setStudents(data);
 
       const newTrie = new Trie();
-      data.forEach((student: Student) =>
-        newTrie.insert(`${student.last_name}${student.first_name}`, student)
-      );
+      data.forEach((student: Student) => {
+        const fullName1 = `${student.first_name} ${student.last_name}`;
+        const fullName2 = `${student.last_name} ${student.first_name}`;
+        const id = student.student_id;
+
+        newTrie.insert(fullName1, student);
+        newTrie.insert(fullName2, student);
+        newTrie.insert(id, student);
+      });
+
       setTrie(newTrie);
     } catch (error) {
       console.error("Error fetching student data:", error);
@@ -68,10 +75,10 @@ const Record: React.FC = () => {
   }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const term = e.target.value;
+    const term = e.target.value.toLowerCase().trim();
     setSearchTerm(term);
 
-    if (trie && term.trim()) {
+    if (trie && term) {
       const results = trie.search(term);
       setFilteredStudents(results);
     } else {
@@ -80,32 +87,32 @@ const Record: React.FC = () => {
   };
 
   const handleSelectStudent = (student: Student) => {
-    const lastName = student.last_name;
+    const key = student.last_name;
     setStudentDetails((prevDetails) => {
-      if (!prevDetails[lastName]) {
-        prevDetails[lastName] = student;
+      if (!prevDetails[key]) {
+        prevDetails[key] = student;
       }
       return { ...prevDetails };
     });
 
-    if (!activeTabs.includes(lastName)) {
-      setActiveTabs((prevTabs) => [...prevTabs, lastName]);
+    if (!activeTabs.includes(key)) {
+      setActiveTabs((prevTabs) => [...prevTabs, key]);
     }
 
-    setActiveTab(lastName);
+    setActiveTab(key);
     setFilteredStudents([]);
     setSearchTerm("");
   };
 
-  const handleCloseDetails = (lastName: string) => {
-    setActiveTabs((prevTabs) => prevTabs.filter((tab) => tab !== lastName));
+  const handleCloseDetails = (key: string) => {
+    setActiveTabs((prevTabs) => prevTabs.filter((tab) => tab !== key));
     setStudentDetails((prev) => {
       const newDetails = { ...prev };
-      delete newDetails[lastName];
+      delete newDetails[key];
       return newDetails;
     });
 
-    if (activeTab === lastName) {
+    if (activeTab === key) {
       setActiveTab(activeTabs[0] || null);
     }
   };
@@ -117,15 +124,12 @@ const Record: React.FC = () => {
 
   const openAddModal = () => {
     setIsAddModalOpen(true);
-    setRecordAdded(false); // Reset record addition state
+    setRecordAdded(false);
   };
 
   const closeAddModal = () => {
     setIsAddModalOpen(false);
-
-    if (recordAdded) {
-      toast.success("Record successfully added!");
-    }
+    if (recordAdded) toast.success("Record successfully added!");
   };
 
   const openEditModal = () => setIsEditModalOpen(true);
@@ -151,9 +155,9 @@ const Record: React.FC = () => {
 
   const handleAddSuccess = () => {
     setRecordAdded(true);
-    setIsAddModalOpen(false); // Close the modal after successful addition
+    setIsAddModalOpen(false);
     toast.success("Record successfully added!");
-    fetchStudentData(); // Refresh student data
+    fetchStudentData();
   };
 
   const handleAddFailure = (errorType: string) => {
@@ -184,7 +188,7 @@ const Record: React.FC = () => {
               type="text"
               value={searchTerm}
               onChange={handleSearch}
-              placeholder="Search student by name..."
+              placeholder="Search by name or ID..."
               className="p-3 border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring focus:ring-blue-500 transition duration-200 w-full sm:w-3/4"
             />
             <button
@@ -199,7 +203,7 @@ const Record: React.FC = () => {
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
               <div className="p-6 rounded-lg shadow-lg max-w-5xl h-5/6 overflow-hidden overflow-y-scroll bg-white">
                 <button
-                  onClick={closeAddModal}
+                  onClick={() => closeAddModal()}
                   className="absolute top-2 right-2 p-2 text-gray-500 hover:text-gray-700"
                 >
                   <FiX size={24} />
@@ -216,14 +220,14 @@ const Record: React.FC = () => {
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
               <div className="p-6 rounded-lg shadow-lg max-w-5xl w-full h-5/6 overflow-hidden overflow-y-scroll bg-white">
                 <button
-                  onClick={closeEditModal}
+                  onClick={() => closeEditModal()} // ✅ Fixed
                   className="absolute top-2 right-2 p-2 text-gray-500 hover:text-gray-700"
                 >
                   <FiX size={24} />
                 </button>
                 <EditRecord
                   studentId={studentDetails[activeTab]!.student_id}
-                  onClose={(updatedStudent) => closeEditModal(updatedStudent)}
+                  onClose={(updatedStudent?: Student) => closeEditModal(updatedStudent)} // ✅ Fixed
                 />
               </div>
             </div>

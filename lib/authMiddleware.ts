@@ -1,11 +1,11 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
 import jwt from 'jsonwebtoken';
 
 export const authenticateUser = (req: NextApiRequest, res: NextApiResponse) => {
-  // Check if the Authorization header is present
   console.log('Request Headers:', req.headers);
 
-  const token = req.headers.authorization?.split(' ')[1]; // Get the token part (after 'Bearer')
-  
+  const token = req.headers.authorization?.split(' ')[1]; // Bearer token
+
   if (!token) {
     console.error('Authorization token is required');
     res.status(401).json({ error: 'Authorization token is required' });
@@ -13,13 +13,13 @@ export const authenticateUser = (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!); // Verify the token
-    console.log('Decoded Token:', decoded); // This will show the decoded payload
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!); // Ensure JWT_SECRET is defined
+    console.log('Decoded Token:', decoded);
 
-    // You can now set the decoded user info for further use (for example, in the request object)
-    req.user = decoded; // Or whatever your app structure is
+    // Set user info on the request object if needed (requires extending NextApiRequest type)
+    (req as any).user = decoded;
   } catch (error) {
-    console.error('Token Validation Error:', error.message);
+    console.error('Token Validation Error:', (error as Error).message);
     res.status(401).json({ error: 'Invalid or expired token' });
   }
 };

@@ -1,10 +1,7 @@
-// pages/api/healthRecords.ts
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import pool from '../../lib/db';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  // Handle POST request to add a health record
   if (req.method === 'POST') {
     const {
       student_id,
@@ -13,29 +10,29 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       course,
       year,
       gender,
-      age, // New field
+      age,
       home_address,
       present_address,
       contact_number,
       emergency_contact_name,
       emergency_contact_relation,
       emergency_contact_phone,
-      status, // e.g., 'Sick', 'Recovered', etc.
+      status,
       date_of_visit,
       diagnosis,
       notes,
-      treatment, // New field
-      medications, // New field
+      treatment,
+      medications,
     } = req.body;
 
     try {
-      // Check if student_id exists in the student table
-      const [studentCheck] = await pool.query('SELECT * FROM student WHERE student_id = ?', [student_id]);
+      // Check if student exists
+      const [studentCheck] = await pool.query('SELECT * FROM students WHERE student_id = ?', [student_id]) as [any[], any];
       if (studentCheck.length === 0) {
         return res.status(400).json({ message: 'Invalid student ID.' });
       }
 
-      // Insert new health record including all the fields from the form
+      // Insert health record
       await pool.query(
         `INSERT INTO health_records (
           student_id,
@@ -44,7 +41,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           course,
           year,
           gender,
-          age, -- New field
+          age,
           home_address,
           present_address,
           contact_number,
@@ -55,8 +52,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           date_of_visit,
           diagnosis,
           notes,
-          treatment, -- New field
-          medications -- New field
+          treatment,
+          medications
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           student_id,
@@ -82,23 +79,22 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       );
 
       res.status(201).json({ message: 'Health record added successfully!' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving health record:', error);
       res.status(500).json({ message: 'Error saving health record.', error: error.message });
     }
   } 
-  // Handle GET request to fetch total patients and patient data for chart
   else if (req.method === 'GET') {
     try {
-      // Fetch total number of distinct patients
-      const [patients] = await pool.query('SELECT COUNT(DISTINCT id) AS totalPatients FROM health_records');
-  
-      // Fetch patient data (including date_of_visit and department for the chart)
+      const [patients] = await pool.query(
+        'SELECT COUNT(DISTINCT id) AS totalPatients FROM health_records'
+      ) as [{ totalPatients: number }[], any];
+
       const [patientData] = await pool.query(
         `SELECT 
           student_id,
           name,
-          age, -- New field
+          age,
           gender,
           department,
           course,
@@ -113,23 +109,23 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           date_of_visit,
           diagnosis,
           notes,
-          treatment, -- New field
-          medications, -- New field
+          treatment,
+          medications,
           COUNT(*) AS patients_treated 
         FROM health_records 
         GROUP BY student_id, name, age, gender, department, course, year, home_address, present_address, contact_number, emergency_contact_name, emergency_contact_relation, emergency_contact_phone, status, date_of_visit, diagnosis, notes, treatment, medications`
-      );
-  
-      // Send back the data including patientData
+      ) as [any[], any];
+
       res.status(200).json({
         totalPatients: patients[0].totalPatients,
-        patientData, // Send patient data for the chart and event details
+        patientData,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
       res.status(500).json({ message: 'Error fetching dashboard data.', error: error.message });
     }
-  } else {
+  } 
+  else {
     res.setHeader('Allow', ['POST', 'GET']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }

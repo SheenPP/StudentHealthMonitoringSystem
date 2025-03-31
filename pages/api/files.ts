@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
-import pool from '../../lib/db'; // Import the pool from db.js
+import pool from '../../lib/db';
 
 const filesDirectory = path.join(process.cwd(), 'public', 'files');
 
@@ -12,20 +12,18 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    // Query the database for files associated with the student_id and consultation_type
-    // Exclude files that are marked as deleted or in the recycle bin (deleted_at is NULL or recycle_bin is 0)
+    // Explicitly cast the result to expected type: [rows[], fields]
     const [rows] = await pool.execute(
       'SELECT id, file_name, file_path FROM files WHERE student_id = ? AND consultation_type = ? AND (deleted_at IS NULL OR recycle_bin = 0)',
       [student_id, consultation_type]
-    );
+    ) as [Array<{ id: number; file_name: string; file_path: string }>, any];
 
     if (rows.length === 0) {
       return res.status(404).json({ error: 'No files found for the given student and consultation type' });
     }
 
-    // Return the files with the associated ID
-    const studentFiles = rows.map((row: any) => ({
-      id: row.id, // Retrieved from the database
+    const studentFiles = rows.map((row) => ({
+      id: row.id,
       file_name: row.file_name,
       file_path: row.file_path,
     }));

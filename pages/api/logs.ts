@@ -1,14 +1,22 @@
+import type { NextApiRequest, NextApiResponse } from "next";
 import db from "../../lib/db";
 
-export default async function handler(req, res) {
+interface LogRecord {
+  id: number;
+  image_url: string;
+  filename: string;
+  uploaded_at: string;
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {
     try {
-      // Explicitly select only the necessary fields
-      const [logs] = await db.query(
+      const result = await db.query(
         "SELECT id, image_url, filename, uploaded_at FROM logs ORDER BY uploaded_at DESC"
       );
+      const logs = result[0] as LogRecord[];
       return res.status(200).json(logs);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching logs:", err.message);
       return res.status(500).json({ error: "Failed to fetch logs from the database" });
     }

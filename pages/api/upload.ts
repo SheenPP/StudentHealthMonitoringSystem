@@ -1,9 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { IncomingForm } from 'formidable';
+import { IncomingForm, type Files, type Fields } from 'formidable';
 import fs from 'fs';
 import path from 'path';
 import pool from '../../lib/db';
 import { getCookie } from 'cookies-next';
+import type { RowDataPacket, OkPacket } from 'mysql2';
 
 export const config = {
   api: {
@@ -13,11 +14,9 @@ export const config = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // Log incoming request details
     console.log('Request method:', req.method);
     console.log('Request headers:', req.headers);
 
-    // Await the getCookie function to resolve the user_id value
     const rawUserId = await getCookie('user_id', { req, res });
     const userId = rawUserId ? `${rawUserId}` : null;
     console.log('Resolved user ID from cookie:', userId);
@@ -27,8 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Authorization token is required' });
     }
 
-    // Retrieve the username from the database
-    const [userResult] = await pool.query('SELECT username FROM users WHERE id = ?', [userId]);
+    const [userResult] = await pool.query<RowDataPacket[]>('SELECT username FROM users WHERE id = ?', [userId]);
     console.log('User result from database:', userResult);
 
     if (userResult.length === 0) {
@@ -42,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === 'POST') {
       const form = new IncomingForm();
 
-      form.parse(req, async (err, fields, files) => {
+      form.parse(req, async (err: any, fields: Fields, files: Files) => {
         if (err) {
           console.error('Error parsing file:', err);
           return res.status(500).json({ message: 'Error parsing file', error: err.message });
@@ -68,20 +66,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             fs.renameSync(file.filepath, path.join(process.cwd(), 'public', filePath));
           } catch (moveErr) {
             console.error('Failed to move uploaded file:', moveErr);
-            return res.status(500).json({ message: 'Failed to move uploaded file', error: moveErr.message });
+            return res.status(500).json({
+              message: 'Failed to move uploaded file',
+              error: moveErr instanceof Error ? moveErr.message : 'Unknown error',
+            });
           }
 
           try {
-            // Insert into files table
-            const query = `
+            const insertQuery = `
               INSERT INTO files (file_name, file_path, upload_date, student_id, consultation_type, uploaded_by)
               VALUES (?, ?, NOW(), ?, ?, ?)
             `;
-            const values = [fileName, filePath, student_id, consultationType, username];
-            const [fileResult] = await pool.query(query, values);
+            const insertValues = [fileName, filePath, student_id, consultationType, username];
+            const [fileResult] = await pool.query<OkPacket>(insertQuery, insertValues);
             const fileId = fileResult.insertId;
 
-            // Insert into file history
             const historyQuery = `
               INSERT INTO file_history (file_id, student_id, action, user, timestamp, file_name, consultation_type)
               VALUES (?, ?, 'Uploaded', ?, NOW(), ?, ?)
@@ -93,7 +92,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return res.status(200).json({ message: 'File uploaded successfully', filePath });
           } catch (dbErr) {
             console.error('Error saving file details to the database:', dbErr);
-            return res.status(500).json({ message: 'Error saving file details', error: dbErr.message });
+            return res.status(500).json({
+              message: 'Error saving file details',
+              error: dbErr instanceof Error ? dbErr.message : 'Unknown database error',
+            });
           }
         } else {
           return res.status(400).json({ message: 'No file uploaded' });
@@ -105,6 +107,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } catch (unexpectedErr) {
     console.error('Unexpected error in handler:', unexpectedErr);
-    res.status(500).json({ message: 'Unexpected server error', error: unexpectedErr.message });
+    return res.status(500).json({
+      message: 'Unexpected server error',
+      error: unexpectedErr instanceof Error ? unexpectedErr.message : 'Unknown error',
+    });
   }
 }

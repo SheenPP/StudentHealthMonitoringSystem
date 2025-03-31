@@ -1,29 +1,27 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import pool from '../../../lib/db';
-import { verifyToken } from '../../../lib/authenticate'; // Helper function to verify JWT token
+import { verifyToken } from '../../../lib/authenticate';
+import { RowDataPacket } from 'mysql2';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Check if the request method is GET
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Get the student ID from the token
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const decoded = verifyToken(token);
-    if (!decoded) {
+    if (!decoded || !decoded.userId) {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
-    const studentId = decoded.studentId;
+    const studentId = decoded.userId; // or decoded.studentId if that's the correct field
 
-    // Fetch student profile from the database
-    const [result] = await pool.query(
+    const [result] = await pool.query<RowDataPacket[]>(
       'SELECT student_id, full_name, email, created_at FROM studentaccount WHERE student_id = ?',
       [studentId]
     );

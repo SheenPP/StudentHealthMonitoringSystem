@@ -1,29 +1,33 @@
 import { useState } from "react";
-import { format } from "date-fns"; // ✅ Import for date formatting
-import { Calendar, Clock, FileText, Loader } from "lucide-react"; // ✅ Icons
+import { format } from "date-fns";
+import { Calendar, Clock, FileText, Loader } from "lucide-react";
 
-export default function AppointmentForm({ onBookSuccess, studentId }) {
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [reason, setReason] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+interface AppointmentFormProps {
+  onBookSuccess: () => void;
+  studentId: string;
+}
 
-  // Format date & time into readable format
-  const formatDate = (inputDate) => {
+export default function AppointmentForm({ onBookSuccess, studentId }: AppointmentFormProps) {
+  const [date, setDate] = useState<string>("");
+  const [time, setTime] = useState<string>("");
+  const [reason, setReason] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+
+  const formatDate = (inputDate: string): string => {
     if (!inputDate) return "";
-    return format(new Date(inputDate), "MMMM d, yyyy"); // Example: March 14, 2025
+    return format(new Date(inputDate), "MMMM d, yyyy");
   };
 
-  const formatTime = (inputTime) => {
+  const formatTime = (inputTime: string): string => {
     if (!inputTime) return "";
     const [hours, minutes] = inputTime.split(":").map(Number);
     const dateObj = new Date();
     dateObj.setHours(hours, minutes);
-    return format(dateObj, "h:mm a"); // Example: 2:30 PM
+    return format(dateObj, "h:mm a");
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -69,7 +73,10 @@ export default function AppointmentForm({ onBookSuccess, studentId }) {
 
       {/* Date Field */}
       <div className="mb-4">
-        <label htmlFor="appointment-date" className="block font-medium text-gray-700 mb-1 flex items-center gap-2">
+        <label
+          htmlFor="appointment-date"
+          className="font-medium text-gray-700 mb-1 flex items-center gap-2"
+        >
           <Calendar size={20} className="text-blue-500" />
           Select a Date
         </label>
@@ -86,7 +93,10 @@ export default function AppointmentForm({ onBookSuccess, studentId }) {
 
       {/* Time Field */}
       <div className="mb-4">
-        <label htmlFor="appointment-time" className="block font-medium text-gray-700 mb-1 flex items-center gap-2">
+        <label
+          htmlFor="appointment-time"
+          className="font-medium text-gray-700 mb-1 flex items-center gap-2"
+        >
           <Clock size={20} className="text-blue-500" />
           Select a Time
         </label>
@@ -103,7 +113,10 @@ export default function AppointmentForm({ onBookSuccess, studentId }) {
 
       {/* Reason Field */}
       <div className="mb-4">
-        <label htmlFor="appointment-reason" className="block font-medium text-gray-700 mb-1 flex items-center gap-2">
+        <label
+          htmlFor="appointment-reason"
+          className="font-medium text-gray-700 mb-1 flex items-center gap-2"
+        >
           <FileText size={20} className="text-blue-500" />
           Reason for Appointment
         </label>
@@ -126,7 +139,7 @@ export default function AppointmentForm({ onBookSuccess, studentId }) {
           loading ? "bg-gray-400" : "bg-blue-500 hover:bg-blue-600"
         }`}
       >
-        {loading ? <Loader size={18} className="animate-spin" /> : null}
+        {loading && <Loader size={18} className="animate-spin" />}
         {loading ? "Booking..." : "Book Appointment"}
       </button>
     </form>

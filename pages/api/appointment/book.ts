@@ -44,25 +44,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const currentDate = new Date();
 
     // ✅ Prevent booking for past dates
-    if (appointmentDate < currentDate.setHours(0, 0, 0, 0)) {
+    if (appointmentDate.getTime() < currentDate.setHours(0, 0, 0, 0)) {
       return res.status(400).json({ error: "Cannot book an appointment for a past date." });
     }
 
     // ✅ Prevent booking past time on the same day
     if (appointmentDate.toDateString() === currentDate.toDateString()) {
-      const appointmentTime = new Date(`${date} ${time}`);
-      if (appointmentTime < currentDate) {
+      const appointmentTime = new Date(`${date}T${time}`);
+      if (appointmentTime.getTime() < currentDate.getTime()) {
         return res.status(400).json({ error: "Cannot book an appointment for a past time today." });
       }
     }
 
+    // ✅ Prevent duplicate bookings (same student, same date & time)
+    const [existingAppointments]: any = await pool.query(
+      `SELECT * FROM appointments 
+       WHERE student_id = ? AND date = ? AND time = ? 
+       AND status IN ('pending', 'approved')`,
+      [studentId, date, time]
+    );
+
+    if (existingAppointments.length > 0) {
+      return res.status(409).json({ error: "You already have an appointment at this date and time." });
+    }
+
     // 📌 Insert appointment into the database
-    const [result] = await pool.query(
-      "INSERT INTO appointments (student_id, date, time, reason, status, admin_approval, user_approval, created_at) VALUES (?, ?, ?, ?, 'pending', 'pending', 'pending', NOW())",
+    const [result]: any = await pool.query(
+      `INSERT INTO appointments 
+       (student_id, date, time, reason, status, admin_approval, user_approval, created_at) 
+       VALUES (?, ?, ?, ?, 'pending', 'pending', 'pending', NOW())`,
       [studentId, date, time, reason]
     );
 
-    if ((result as any).affectedRows === 0) {
+    if (result.affectedRows === 0) {
       return res.status(500).json({ error: "Failed to book appointment." });
     }
 

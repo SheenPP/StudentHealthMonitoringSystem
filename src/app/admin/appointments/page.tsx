@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/AdminSidebar";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { format } from "date-fns"; // ✅ import for formatting
 
 // Define an interface for appointments
 interface Appointment {
@@ -14,6 +15,10 @@ interface Appointment {
   admin_approval: "approved" | "rejected" | "pending";
   status: "approved" | "rejected" | "pending";
 }
+
+// Format date as "April 1, 2025"
+const formatDate = (dateStr: string): string =>
+  format(new Date(dateStr), "MMMM d, yyyy");
 
 // Skeleton Loader for Table
 const SkeletonTable = () => {
@@ -107,8 +112,8 @@ export default function AdminAppointments() {
         {loading ? (
           <SkeletonTable />
         ) : (
-          <div className="mt-6 bg-white shadow-md rounded-lg p-6 border border-gray-300">
-            <table className="w-full border-collapse">
+          <div className="mt-6 bg-white shadow-md rounded-lg p-6 border border-gray-300 overflow-x-auto">
+            <table className="w-full border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-gray-200">
                   <th className="p-3 text-left">Name</th>
@@ -120,28 +125,34 @@ export default function AdminAppointments() {
               </thead>
               <tbody>
                 {appointments.map((appointment) => (
-                  <tr key={appointment.id} className="border-b">
-                    <td className="p-3">{appointment.last_name}, {appointment.first_name}</td>
-                    <td className="p-3">{appointment.date}</td>
+                  <tr key={appointment.id} className="border-b text-sm sm:text-base">
                     <td className="p-3">
-                      <span className={`px-2 py-1 text-sm font-medium rounded-lg ${
-                        appointment.admin_approval === "approved"
-                          ? "bg-green-100 text-green-700"
-                          : appointment.admin_approval === "rejected"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}>
+                      {appointment.last_name}, {appointment.first_name}
+                    </td>
+                    <td className="p-3">{formatDate(appointment.date)}</td>
+                    <td className="p-3">
+                      <span
+                        className={`px-2 py-1 text-sm font-medium rounded-lg ${
+                          appointment.admin_approval === "approved"
+                            ? "bg-green-100 text-green-700"
+                            : appointment.admin_approval === "rejected"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
                         {appointment.admin_approval}
                       </span>
                     </td>
                     <td className="p-3">
-                      <span className={`px-2 py-1 text-sm font-medium rounded-lg ${
-                        appointment.status === "pending"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : appointment.status === "approved"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}>
+                      <span
+                        className={`px-2 py-1 text-sm font-medium rounded-lg ${
+                          appointment.status === "pending"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : appointment.status === "approved"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
                         {appointment.status}
                       </span>
                     </td>

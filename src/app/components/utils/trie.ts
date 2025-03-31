@@ -18,6 +18,7 @@ export class Trie {
   }
 
   insert(key: string, record: any) {
+    key = key.toLowerCase().trim(); // normalize
     let node = this.root;
     for (const char of key) {
       if (!node.children[char]) {
@@ -30,6 +31,7 @@ export class Trie {
   }
 
   search(prefix: string): any[] {
+    prefix = prefix.toLowerCase().trim(); // normalize
     let node = this.root;
     for (const char of prefix) {
       if (!node.children[char]) return [];

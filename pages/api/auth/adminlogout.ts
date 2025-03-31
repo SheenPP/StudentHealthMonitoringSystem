@@ -12,10 +12,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       "Set-Cookie",
       serialize("adminAuthToken", "", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-        sameSite: "Strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict", // 🔽 Fixed here
         path: "/",
-        expires: new Date(0), // Expire immediately
+        expires: new Date(0),
       })
     );
 

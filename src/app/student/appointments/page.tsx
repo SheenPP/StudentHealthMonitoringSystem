@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Navbar from "../../components/StudentNavbar";
 import AppointmentForm from "../../components/AppointmentForm";
-import AppointmentList from "../../components/AppointmentList";
-import { User, CalendarDays } from "lucide-react"; // ✅ Icons
+import { User, CalendarDays } from "lucide-react";
+import { format } from "date-fns";
 
 interface Student {
   student_id: string;
@@ -22,6 +22,13 @@ interface Appointment {
   status: "pending" | "approved" | "rejected";
 }
 
+// ✅ Simple and safe format functions
+const formatDate = (dateStr: string): string =>
+  format(new Date(dateStr), "MMMM d, yyyy");
+
+const formatTime = (timeStr: string): string =>
+  format(new Date(`1970-01-01T${timeStr}`), "h:mm a");
+
 export default function AppointmentsPage() {
   const [student, setStudent] = useState<Student | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -35,7 +42,6 @@ export default function AppointmentsPage() {
     try {
       setLoading(true);
 
-      // Fetch student data
       const studentRes = await axios.get("/api/auth/getStudentUser", {
         withCredentials: true,
       });
@@ -55,7 +61,6 @@ export default function AppointmentsPage() {
         last_name: userData.last_name,
       });
 
-      // Fetch appointments
       const appointmentRes = await axios.get(`/api/appointment/route?studentId=${studentId}`, {
         withCredentials: true,
       });
@@ -70,9 +75,9 @@ export default function AppointmentsPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen">
+      <div className="flex flex-col justify-center items-center h-screen px-4">
         <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
-        <p className="mt-3 text-gray-600">Loading appointments...</p>
+        <p className="mt-3 text-gray-600 text-center">Loading appointments...</p>
       </div>
     );
   }
@@ -80,8 +85,8 @@ export default function AppointmentsPage() {
   return (
     <>
       <Navbar />
-      <div className="container mx-auto p-6 mt-6">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800 flex items-center justify-center gap-2">
+      <div className="container mx-auto px-4 py-6 max-w-screen-lg">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-gray-800 flex items-center justify-center gap-2">
           <CalendarDays size={28} /> Manage Your Appointments
         </h1>
 
@@ -95,50 +100,53 @@ export default function AppointmentsPage() {
               <p className="text-gray-500">Student ID: {student.student_id}</p>
             </div>
 
-            {/* Side-by-side layout */}
-            <div className="flex flex-col md:flex-row md:space-x-6">
-              
-              {/* Left Column - Appointment Form */}
-              <div className="w-full md:w-1/2 bg-white shadow-md rounded-lg p-6 border border-gray-300">
+            <div className="flex flex-col md:flex-row md:space-x-6 gap-6">
+              {/* Appointment Form */}
+              <div className="w-full md:w-1/2 bg-white shadow-md rounded-lg p-4 sm:p-6 border border-gray-300">
                 <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Book an Appointment</h2>
                 <AppointmentForm studentId={student.student_id} onBookSuccess={fetchData} />
               </div>
 
-              {/* Right Column - Appointment List */}
-              <div className="w-full md:w-1/2 bg-white shadow-md rounded-lg p-6 border border-gray-300">
+              {/* Appointment List (Table version) */}
+              <div className="w-full md:w-1/2 bg-white shadow-md rounded-lg p-4 sm:p-6 border border-gray-300">
                 <h2 className="text-xl font-semibold text-gray-700 mb-4 text-center">Your Appointments</h2>
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-200">
-                      <th className="p-3 text-left">Date</th>
-                      <th className="p-3 text-left">Time</th>
-                      <th className="p-3 text-left">Reason</th>
-                      <th className="p-3 text-left">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {appointments.map((appointment) => (
-                      <tr key={appointment.id} className="border-b">
-                        <td className="p-3">{appointment.date}</td>
-                        <td className="p-3">{appointment.time}</td>
-                        <td className="p-3">{appointment.reason}</td>
-                        <td className="p-3">
-                          <span className={`px-3 py-1 text-sm font-medium rounded-lg border ${
-                            appointment.status === "pending"
-                              ? "bg-yellow-100 text-yellow-700 border-yellow-500"
-                              : appointment.status === "approved"
-                              ? "bg-green-100 text-green-700 border-green-500"
-                              : "bg-red-100 text-red-700 border-red-500"
-                          }`}>
-                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
 
+                {/* Responsive Table Scroll */}
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse min-w-[500px]">
+                    <thead>
+                      <tr className="bg-gray-200 text-sm sm:text-base">
+                        <th className="p-3 text-left">Date</th>
+                        <th className="p-3 text-left">Time</th>
+                        <th className="p-3 text-left">Reason</th>
+                        <th className="p-3 text-left">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {appointments.map((appointment) => (
+                        <tr key={appointment.id} className="border-b text-sm sm:text-base">
+                          <td className="p-3">{formatDate(appointment.date)}</td>
+                          <td className="p-3">{formatTime(appointment.time)}</td>
+                          <td className="p-3">{appointment.reason}</td>
+                          <td className="p-3">
+                            <span
+                              className={`px-3 py-1 text-sm font-medium rounded-lg border ${
+                                appointment.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-700 border-yellow-500"
+                                  : appointment.status === "approved"
+                                  ? "bg-green-100 text-green-700 border-green-500"
+                                  : "bg-red-100 text-red-700 border-red-500"
+                              }`}
+                            >
+                              {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </>
         ) : (

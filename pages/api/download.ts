@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing consultation type or filename' });
     }
 
-    // Sanitize and validate the consultation_type and filename to prevent path traversal attacks
+    // Sanitize and validate the consultation_type and filename
     const safeConsultationType = path.basename(consultation_type as string);
     const safeFilename = path.basename(filename as string);
     const filePath = path.join(process.cwd(), 'public', 'files', safeConsultationType, safeFilename);
@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('Filename:', safeFilename);
     console.log('File Path:', filePath);
 
-    // Check if the file exists and is a file
+    // Check if the file exists
     try {
       const fileStat = await stat(filePath);
       if (!fileStat.isFile()) {
@@ -62,14 +62,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: 'File not found' });
     }
 
-    // Retrieve user role from the database
-    let userRole;
+    // Retrieve user role
+    let userRole: string;
     try {
-      const [userResult] = await pool.query('SELECT role FROM users WHERE id = ?', [userId]);
+      const [userResult] = await pool.query(
+        'SELECT role FROM users WHERE id = ?',
+        [userId]
+      ) as [Array<{ role: string }>, any];
+
       if (userResult.length === 0) {
         console.error(`Invalid user for ID: ${userId}`);
         return res.status(401).json({ error: 'Invalid user' });
       }
+
       userRole = userResult[0].role;
       console.log('Resolved user role:', userRole);
     } catch (err) {
@@ -77,22 +82,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Database query error' });
     }
 
-    // Verify that the user has permission to access the file if not an admin
+    // If not admin, check file permission
     if (userRole !== 'admin') {
       try {
-        const query = `SELECT * FROM files WHERE file_name = ? AND consultation_type = ? AND student_id = ?`;
-        console.log('Database query:', query);
-        console.log('Query parameters:', safeFilename, safeConsultationType, userId);
-
-        const [fileResult] = await pool.query(query, [safeFilename, safeConsultationType, userId]);
+        const [fileResult] = await pool.query(
+          `SELECT * FROM files WHERE file_name = ? AND consultation_type = ? AND student_id = ?`,
+          [safeFilename, safeConsultationType, userId]
+        ) as [Array<any>, any];
 
         if (fileResult.length === 0) {
           console.error('Unauthorized access attempt by user:', userId);
-          console.error('Query result was empty for:', {
-            file_name: safeFilename,
-            consultation_type: safeConsultationType,
-            student_id: userId,
-          });
           return res.status(403).json({ error: 'You do not have permission to access this file' });
         }
 
@@ -103,14 +102,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    // Determine the Content-Type using mime-types package
+    // Set headers and send file
     const contentType = mime.lookup(filePath) || 'application/octet-stream';
-
-    // Set headers for downloading the file
     res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.setHeader('Content-Type', contentType);
 
-    // Create a read stream and pipe it to the response
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
 

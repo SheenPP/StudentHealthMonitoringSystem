@@ -1,10 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import pool from "../../../lib/db"; // Ensure your MySQL connection is set up
-import { serialize } from "cookie"; // Helps manage cookies in Next.js API routes
+import pool from "../../../lib/db";
+import { serialize } from "cookie";
 
-const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key"; // Use environment variable for security
+const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -18,30 +18,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Check if the admin exists and is approved
+    // Query the database for the admin
     const [admin] = await pool.query(
       "SELECT admin_id, username, email, password_hash, role, position, status FROM admin_accounts WHERE username = ?",
       [username]
-    );
+    ) as [Array<{
+      admin_id: number;
+      username: string;
+      email: string;
+      password_hash: string;
+      role: string;
+      position: string;
+      status: string;
+    }>, any];
 
-    if ((admin as any).length === 0) {
+    if (admin.length === 0) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
-    const adminData = (admin as any)[0];
+    const adminData = admin[0];
 
-    // Check if the admin is approved
+    // Check approval status
     if (adminData.status !== "approved") {
       return res.status(403).json({ error: "Your account is pending approval" });
     }
 
-    // Verify password using bcrypt
+    // Validate password
     const isMatch = await bcrypt.compare(password, adminData.password_hash);
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
 
-    // Generate a JWT token
+    // Create JWT
     const token = jwt.sign(
       {
         adminId: adminData.admin_id,
@@ -51,19 +59,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         position: adminData.position,
       },
       SECRET_KEY,
-      { expiresIn: "2h" } // Token expires in 2 hours
+      { expiresIn: "2h" }
     );
 
-    // Set HTTP-only Cookie (More Secure)
+    // Set cookie
     const cookie = serialize("adminAuthToken", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Only set secure in production
-      sameSite: "Strict",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict", // ✅ lowercase fix
       path: "/",
-      maxAge: 2 * 60 * 60, // 2 hours
+      maxAge: 2 * 60 * 60,
     });
 
     res.setHeader("Set-Cookie", cookie);
+
     res.status(200).json({
       message: "Login successful",
       user: {

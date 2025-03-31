@@ -1,18 +1,21 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import pool from '../../lib/db';
 
+interface FileHistoryRecord {
+  action: string;
+  user: string;
+  timestamp: string;
+  fileName: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // Fetch the student ID from the request query
     const studentId = req.query.student_id as string;
 
-    // Validate that the student ID is provided
     if (!studentId) {
       return res.status(400).json({ message: 'Student ID is required' });
     }
 
-    // Query to fetch the file history for the specified student
-    // Including the user name from the users table (assuming there's a join)
     const query = `
       SELECT 
         action,
@@ -24,24 +27,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ORDER BY timestamp DESC;
     `;
 
-    // Execute the query with the provided student ID
-    const [rows] = await pool.query(query, [studentId]);
+    const result = await pool.query(query, [studentId]);
+    const rows = result[0] as FileHistoryRecord[];
 
-    // Debug log for the fetched history
     console.log('Fetched history:', rows);
 
-    // Check if any records were returned
-    if (!rows.length) {
+    if (rows.length === 0) {
       return res.status(404).json({ message: 'No file history found for the given student ID' });
     }
 
-    // Return the fetched rows
-    res.status(200).json(rows);
-  } catch (error) {
-    // Log any error that occurs
+    return res.status(200).json(rows);
+  } catch (error: any) {
     console.error('Error fetching file history:', error);
-
-    // Respond with an appropriate error message
-    res.status(500).json({ message: 'Error fetching file history', error: error.message });
+    return res.status(500).json({ message: 'Error fetching file history', error: error.message });
   }
 }

@@ -36,7 +36,15 @@ const SkeletonSidebar = ({ isCollapsed }: { isCollapsed: boolean }) => {
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [user, setUser] = useState<{ username: string; email?: string; role: string; position: string } | null>(null);
+  const [user, setUser] = useState<{
+    username: string;
+    email: string;
+    firstname: string;
+    lastname: string;
+    role: string;
+    position: string;
+    profile_picture: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 

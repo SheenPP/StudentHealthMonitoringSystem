@@ -10,7 +10,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Set-Cookie", serialize("studentAuthToken", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "Strict",
+    sameSite: "strict",
     maxAge: 0, // Expire immediately
     path: "/",
   }));
