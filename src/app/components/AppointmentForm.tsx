@@ -7,7 +7,10 @@ interface AppointmentFormProps {
   studentId: string;
 }
 
-export default function AppointmentForm({ onBookSuccess, studentId }: AppointmentFormProps) {
+export default function AppointmentForm({
+  onBookSuccess,
+  studentId,
+}: AppointmentFormProps) {
   const [date, setDate] = useState<string>("");
   const [time, setTime] = useState<string>("");
   const [reason, setReason] = useState<string>("");
@@ -49,8 +52,12 @@ export default function AppointmentForm({ onBookSuccess, studentId }: Appointmen
         const data = await res.json();
         setError(data.error || "⚠️ Failed to book appointment. Try again.");
       }
-    } catch (error) {
-      setError("⚠️ Something went wrong. Please check your connection.");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "⚠️ Something went wrong. Please check your connection.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -88,7 +95,9 @@ export default function AppointmentForm({ onBookSuccess, studentId }: Appointmen
           required
           className="border border-gray-300 p-2 w-full rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
-        {date && <p className="text-sm text-gray-500 mt-1">📅 {formatDate(date)}</p>}
+        {date && (
+          <p className="text-sm text-gray-500 mt-1">📅 {formatDate(date)}</p>
+        )}
       </div>
 
       {/* Time Field */}
@@ -108,7 +117,9 @@ export default function AppointmentForm({ onBookSuccess, studentId }: Appointmen
           required
           className="border border-gray-300 p-2 w-full rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
-        {time && <p className="text-sm text-gray-500 mt-1">⏰ {formatTime(time)}</p>}
+        {time && (
+          <p className="text-sm text-gray-500 mt-1">⏰ {formatTime(time)}</p>
+        )}
       </div>
 
       {/* Reason Field */}

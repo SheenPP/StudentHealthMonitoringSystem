@@ -9,7 +9,7 @@ interface FileAction {
 
 interface ClinicHistoryProps {
   studentId: string | undefined;
-  onHistoryUpdated?: () => void; // Optional callback to trigger update when a task is completed
+  onHistoryUpdated?: () => void;
 }
 
 const ClinicHistory: React.FC<ClinicHistoryProps> = ({ studentId, onHistoryUpdated }) => {
@@ -37,18 +37,20 @@ const ClinicHistory: React.FC<ClinicHistoryProps> = ({ studentId, onHistoryUpdat
           setHistory(data);
         } else {
           console.warn('No history found.');
-          setHistory([]); // Clear history if no data is returned
+          setHistory([]);
         }
-      } catch (error) {
-        setError('An error occurred while fetching history.');
-        console.error('Error fetching history:', error);
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : 'An error occurred while fetching history.';
+        setError(message);
+        console.error('Error fetching history:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchHistory();
-  }, [studentId, onHistoryUpdated]); // Trigger fetch when studentId or history is updated
+  }, [studentId, onHistoryUpdated]);
 
   if (!studentId) {
     return (

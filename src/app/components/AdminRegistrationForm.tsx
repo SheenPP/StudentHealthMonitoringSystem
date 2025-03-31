@@ -17,20 +17,19 @@ const AdminRegistrationForm = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-  
+
     // Allow special characters "-" and "." in the name field
     if (name === "name" && /[^a-zA-Z\s\-.]/.test(value)) {
       setError("Name cannot contain special characters or numbers");
       return;
     }
-  
+
     setError(""); // Clear error when valid input is entered
     setFormData({
       ...formData,
       [name]: value,
     });
   };
-  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,8 +82,12 @@ const AdminRegistrationForm = () => {
         password: "",
         confirmPassword: "",
       });
-    } catch (err: any) {
-      setError(err.message || "An error occurred during registration.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred during registration.");
+      }
     } finally {
       setLoading(false);
     }
