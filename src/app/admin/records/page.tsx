@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation"; // ❌ Not needed — will remove
 import FileList from "../../components/FileList";
 import Sidebar from "../../components/AdminSidebar";
 import Navbar from "../../components/Header";
