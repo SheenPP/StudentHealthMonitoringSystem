@@ -4,6 +4,11 @@ import path from "path";
 import fs from "fs";
 import db from "../../../lib/db";
 
+// Define expected shape of a log entry
+interface LogEntry {
+  image_url: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
 
@@ -19,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // 1. Get the image_url before deleting
     const [rows] = await db.query("SELECT image_url FROM logs WHERE id = ?", [id]);
-    const log = (rows as any)[0];
+    const log = (rows as LogEntry[])[0];
 
     if (!log) {
       return res.status(404).json({ error: "Image not found" });

@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
+import Image from "next/image";
 
-type Image = {
+type ImageData = {
   id: string;
   image_url: string;
   filename: string;
@@ -12,13 +13,13 @@ type Image = {
 };
 
 type SortState = {
-  key: keyof Image;
+  key: keyof ImageData;
   order: "asc" | "desc";
 };
 
 const Logs = () => {
-  const [images, setImages] = useState<Image[]>([]);
-  const [modalImage, setModalImage] = useState<Image | null>(null);
+  const [images, setImages] = useState<ImageData[]>([]);
+  const [modalImage, setModalImage] = useState<ImageData | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [sortState, setSortState] = useState<SortState>({
@@ -32,7 +33,7 @@ const Logs = () => {
     try {
       const res = await fetch("/api/logs");
       if (!res.ok) throw new Error("Failed to fetch logs");
-      const data: Image[] = await res.json();
+      const data: ImageData[] = await res.json();
       setImages(data);
     } catch {
       setError("Failed to load images.");
@@ -66,26 +67,19 @@ const Logs = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/logs/${id}`, {
-        method: "DELETE",
-      });
-  
-      if (!res.ok) {
-        throw new Error("Failed to delete");
-      }
-  
-      await fetchLogs(); // Refresh the logs
+      const res = await fetch(`/api/logs/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      await fetchLogs();
     } catch (err) {
       console.error("Delete failed:", err);
     }
   };
-  
 
-  const sortedImages = [...images].sort((a, b) => {
-    return sortState.order === "asc"
+  const sortedImages = [...images].sort((a, b) =>
+    sortState.order === "asc"
       ? a[sortState.key].localeCompare(b[sortState.key])
-      : b[sortState.key].localeCompare(a[sortState.key]);
-  });
+      : b[sortState.key].localeCompare(a[sortState.key])
+  );
 
   const indexOfLast = currentPage * imagesPerPage;
   const indexOfFirst = indexOfLast - imagesPerPage;
@@ -102,7 +96,6 @@ const Logs = () => {
 
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
-          {/* Upload */}
           <div className="mb-6">
             <input
               type="file"
@@ -113,7 +106,6 @@ const Logs = () => {
             />
           </div>
 
-          {/* Table */}
           <div className="overflow-x-auto bg-white shadow rounded-lg">
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-200">
@@ -138,15 +130,19 @@ const Logs = () => {
                 {currentImages.map((image) => (
                   <tr key={image.id} className="border-t">
                     <td className="p-3">
-                      <img
+                      <Image
                         src={image.image_url}
                         alt={image.filename}
+                        width={64}
+                        height={64}
                         className="w-16 h-16 object-cover rounded-md cursor-pointer"
                         onClick={() => setModalImage(image)}
                       />
                     </td>
                     <td className="p-3">{image.filename}</td>
-                    <td className="p-3">{new Date(image.uploaded_at).toLocaleString()}</td>
+                    <td className="p-3">
+                      {new Date(image.uploaded_at).toLocaleString()}
+                    </td>
                     <td className="p-3 text-center space-x-2">
                       <button
                         onClick={() => setModalImage(image)}
@@ -167,7 +163,6 @@ const Logs = () => {
             </table>
           </div>
 
-          {/* Pagination */}
           <div className="flex justify-center mt-6 space-x-2">
             {Array.from({ length: totalPages }).map((_, idx) => (
               <button
@@ -184,7 +179,6 @@ const Logs = () => {
             ))}
           </div>
 
-          {/* Modal */}
           {modalImage && (
             <div
               className="fixed inset-0 z-50 bg-black bg-opacity-70 flex justify-center items-center"
@@ -200,9 +194,11 @@ const Logs = () => {
                 >
                   &times;
                 </button>
-                <img
+                <Image
                   src={modalImage.image_url}
                   alt={modalImage.filename}
+                  width={800}
+                  height={600}
                   className="w-full h-auto object-contain rounded"
                 />
               </div>

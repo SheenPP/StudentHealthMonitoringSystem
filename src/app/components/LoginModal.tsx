@@ -1,3 +1,5 @@
+// src/app/components/LoginModal.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -25,7 +27,7 @@ const Login = () => {
       const { token } = response.data;
       localStorage.setItem("authToken", token);
       window.location.href = "/dashboard";
-    } catch (_) {
+    } catch {
       setError("Invalid username or password");
     } finally {
       setLoading(false);

@@ -1,3 +1,4 @@
+// src/app/components/StudentRegistration.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -29,7 +30,7 @@ const StudentRegistration = () => {
         if (response.status === 200 && response.data) {
           router.push("/student/dashboard");
         }
-      } catch (_) {
+      } catch {
         // Not logged in, ignore
       }
     };

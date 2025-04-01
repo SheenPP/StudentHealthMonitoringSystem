@@ -11,7 +11,7 @@ import EmergencyContacts from "../components/EmergencyContacts";
 import Image from "next/image";
 import AddRecord from "../components/addrecord";
 import EditRecord from "../components/editRecord";
-import { Trie } from "../components/utils/trie"; // ✅ Make sure this is generic-compatible
+import { Trie } from "../components/utils/trie";
 
 interface Student {
   id: number;
@@ -33,7 +33,6 @@ interface Student {
 }
 
 const Record: React.FC = () => {
-  const [students, setStudents] = useState<Student[] | null>(null);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTabs, setActiveTabs] = useState<string[]>([]);
@@ -43,13 +42,12 @@ const Record: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [recordAdded, setRecordAdded] = useState(false);
-  const [trie, setTrie] = useState<Trie<Student> | null>(null); // ✅ Use generic
+  const [trie, setTrie] = useState<Trie<Student> | null>(null);
 
   const fetchStudentData = async () => {
     try {
       const response = await fetch("/api/students");
       const data: Student[] = await response.json();
-      setStudents(data);
 
       const newTrie = new Trie<Student>();
       data.forEach((student) => {
@@ -117,7 +115,11 @@ const Record: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { year: "numeric", month: "2-digit", day: "2-digit" };
+    const options: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
@@ -136,9 +138,6 @@ const Record: React.FC = () => {
   const closeEditModal = (updatedStudent?: Student) => {
     setIsEditModalOpen(false);
     if (updatedStudent) {
-      setStudents((prev) =>
-        prev?.map((s) => (s.student_id === updatedStudent.student_id ? updatedStudent : s)) || []
-      );
       setStudentDetails((prev) => ({
         ...prev,
         [updatedStudent.last_name]: updatedStudent,
@@ -284,12 +283,16 @@ const Record: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-xl font-semibold">
-                    Name: {studentDetails[activeTab]!.last_name.toUpperCase()}, {studentDetails[activeTab]!.first_name}
+                    Name: {studentDetails[activeTab]!.last_name.toUpperCase()},{" "}
+                    {studentDetails[activeTab]!.first_name}
                   </p>
                   <p>Student ID: {studentDetails[activeTab]!.student_id}</p>
                   <p>Present Address: {studentDetails[activeTab]!.present_address}</p>
                   <p>Home Address: {studentDetails[activeTab]!.home_address}</p>
-                  <p>Course - Year: {studentDetails[activeTab]!.course} - {studentDetails[activeTab]!.year}</p>
+                  <p>
+                    Course - Year: {studentDetails[activeTab]!.course} -{" "}
+                    {studentDetails[activeTab]!.year}
+                  </p>
                   <p>Date of Birth: {formatDate(studentDetails[activeTab]!.date_of_birth)}</p>
                   <p>Email: {studentDetails[activeTab]!.email}</p>
                   <p>Phone: {studentDetails[activeTab]!.phone_number}</p>
