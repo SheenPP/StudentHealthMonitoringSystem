@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import Sidebar from "../../components/AdminSidebar";
 import { useRouter } from "next/navigation";
+import useAdminAuth from "../../hooks/useAdminAuth";
+import { Loader } from "lucide-react";
 
 interface Account {
   id: number;
@@ -12,16 +14,17 @@ interface Account {
 }
 
 export default function AdminApprovals() {
+  const { authChecked, loading: authLoading } = useAdminAuth();
   const [pendingStudents, setPendingStudents] = useState<Account[]>([]);
   const [pendingUsers, setPendingUsers] = useState<Account[]>([]);
   const [pendingAdmins, setPendingAdmins] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
   const router = useRouter();
 
   const fetchPendingAccounts = useCallback(async () => {
     try {
       const response = await axios.get("/api/admin/getPendingAccounts", {
-        withCredentials: true, // ✅ sends cookies automatically
+        withCredentials: true,
       });
 
       setPendingStudents(response.data.students);
@@ -29,37 +32,36 @@ export default function AdminApprovals() {
       setPendingAdmins(response.data.admins);
     } catch (error) {
       console.error("Error fetching pending accounts:", error);
-      router.push("/admin-login");
     } finally {
-      setLoading(false);
+      setLoadingData(false);
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
-    fetchPendingAccounts();
-  }, [fetchPendingAccounts]);
+    if (authChecked) {
+      fetchPendingAccounts();
+    }
+  }, [authChecked, fetchPendingAccounts]);
 
   const updateStatus = async (id: number, type: string, status: string) => {
     try {
       await axios.put(
         "/api/admin/updateAccountStatus",
         { id, type, status },
-        {
-          withCredentials: true, // ✅ use cookie auth
-        }
+        { withCredentials: true }
       );
-      fetchPendingAccounts(); // Refresh after update
+      fetchPendingAccounts(); // Refresh list
     } catch (error) {
       console.error(`Error updating ${type} status:`, error);
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100">
         <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500"></div>
-          <p className="mt-2 text-gray-700 text-lg">Loading...</p>
+          <Loader className="h-8 w-8 animate-spin text-blue-600" />
+          <p className="mt-2 text-gray-700 text-lg">Checking authentication...</p>
         </div>
       </div>
     );
@@ -67,34 +69,42 @@ export default function AdminApprovals() {
 
   return (
     <div className="flex min-h-screen">
-      {/* Sidebar */}
       <div className="bg-gray-200 transition-all duration-300">
         <Sidebar />
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 p-6">
         <h1 className="text-2xl font-semibold">Pending Approvals</h1>
         <p className="text-gray-600 mt-2">Manage student, user, and admin approvals.</p>
 
-        <ApprovalTable
-          title="Pending Students"
-          data={pendingStudents}
-          type="student"
-          updateStatus={updateStatus}
-        />
-        <ApprovalTable
-          title="Pending Users"
-          data={pendingUsers}
-          type="user"
-          updateStatus={updateStatus}
-        />
-        <ApprovalTable
-          title="Pending Admins"
-          data={pendingAdmins}
-          type="admin"
-          updateStatus={updateStatus}
-        />
+        {loadingData ? (
+          <>
+            <SkeletonTable title="Pending Students" />
+            <SkeletonTable title="Pending Users" />
+            <SkeletonTable title="Pending Admins" />
+          </>
+        ) : (
+          <>
+            <ApprovalTable
+              title="Pending Students"
+              data={pendingStudents}
+              type="student"
+              updateStatus={updateStatus}
+            />
+            <ApprovalTable
+              title="Pending Users"
+              data={pendingUsers}
+              type="user"
+              updateStatus={updateStatus}
+            />
+            <ApprovalTable
+              title="Pending Admins"
+              data={pendingAdmins}
+              type="admin"
+              updateStatus={updateStatus}
+            />
+          </>
+        )}
       </div>
     </div>
   );
@@ -149,3 +159,19 @@ const ApprovalTable = ({ title, data, type, updateStatus }: ApprovalTableProps) 
     </div>
   );
 };
+
+const SkeletonTable = ({ title }: { title: string }) => (
+  <div className="mt-6 animate-pulse">
+    <h2 className="text-lg font-medium text-gray-400">{title}</h2>
+    <div className="mt-2 space-y-2 border border-gray-200 rounded">
+      {[...Array(4)].map((_, index) => (
+        <div key={index} className="grid grid-cols-4 gap-4 px-4 py-2">
+          <div className="h-4 bg-gray-300 rounded" />
+          <div className="h-4 bg-gray-300 rounded" />
+          <div className="h-4 bg-gray-300 rounded" />
+          <div className="h-4 bg-gray-300 rounded" />
+        </div>
+      ))}
+    </div>
+  </div>
+);

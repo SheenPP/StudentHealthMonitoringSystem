@@ -145,11 +145,11 @@ const Sidebar: React.FC = () => {
             active={pathname === "/admin/archives"}
           />
           <SidebarItem
-            href="/admin/account"
+            href="/admin/accounts"
             icon={<FiUser size={20} />}
             text="Account"
             isCollapsed={isCollapsed}
-            active={pathname === "/admin/account"}
+            active={pathname === "/admin/accounts"}
           />
         </ul>
       </nav>
