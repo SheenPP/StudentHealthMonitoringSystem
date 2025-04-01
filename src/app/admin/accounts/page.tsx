@@ -5,7 +5,6 @@ import axios from "axios";
 import Sidebar from "../../components/AdminSidebar";
 import { useRouter } from "next/navigation";
 
-// Define Account type
 interface Account {
   id: number;
   name: string;
@@ -19,11 +18,10 @@ export default function AdminApprovals() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // ✅ Memoize fetchPendingAccounts
   const fetchPendingAccounts = useCallback(async () => {
     try {
       const response = await axios.get("/api/admin/getPendingAccounts", {
-        withCredentials: true,
+        withCredentials: true, // ✅ sends cookies automatically
       });
 
       setPendingStudents(response.data.students);
@@ -37,7 +35,6 @@ export default function AdminApprovals() {
     }
   }, [router]);
 
-  // ✅ No ESLint warning now
   useEffect(() => {
     fetchPendingAccounts();
   }, [fetchPendingAccounts]);
@@ -47,9 +44,11 @@ export default function AdminApprovals() {
       await axios.put(
         "/api/admin/updateAccountStatus",
         { id, type, status },
-        { withCredentials: true }
+        {
+          withCredentials: true, // ✅ use cookie auth
+        }
       );
-      fetchPendingAccounts(); // Refresh data after update
+      fetchPendingAccounts(); // Refresh after update
     } catch (error) {
       console.error(`Error updating ${type} status:`, error);
     }
@@ -101,7 +100,6 @@ export default function AdminApprovals() {
   );
 }
 
-// Props interface for the approval table
 interface ApprovalTableProps {
   title: string;
   data: Account[];
