@@ -1,13 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useOptions } from '../options/useOptions'; // Import the hook
-import DepartmentSelect from '../options/DepartmentSelect';
-import CourseSelect from '../options/CourseSelect';
-import YearSelect from '../options/YearSelect';
+import { useOptions } from "../options/useOptions";
+import DepartmentSelect from "../options/DepartmentSelect";
+import CourseSelect from "../options/CourseSelect";
+import YearSelect from "../options/YearSelect";
+import Image from "next/image";
 
 interface EditRecordProps {
-  studentId: string; // studentId passed as a prop for editing an existing record
-  onClose: () => void; // Function to close the modal
+  studentId: string;
+  onClose: () => void;
 }
 
 const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
@@ -15,7 +16,7 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
     studentId: "",
     firstName: "",
     lastName: "",
-    gender: "", // Gender field
+    gender: "",
     department: "",
     course: "",
     year: "",
@@ -28,18 +29,17 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
     emergencyContactName: "",
     emergencyContactRelation: "",
     emergencyContactPhone: "",
-    photoPath: "", // Photo path field to hold the existing photo
+    photoPath: "",
   });
+
   const [newPhoto, setNewPhoto] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const { departments, coursesByDepartment, years } = useOptions(); // Use the hook
+  const { departments, coursesByDepartment, years } = useOptions();
 
-  // Fetch student data when editing
   useEffect(() => {
     if (!studentId || studentId.trim() === "") {
-      console.error("Invalid or missing Student ID.");
       setError("Student ID is required to edit a record.");
       setIsLoading(false);
       return;
@@ -49,15 +49,12 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
       setIsLoading(true);
       try {
         const response = await fetch(`/api/students?id=${studentId.trim()}`);
-
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || "Failed to fetch student data");
         }
 
         const result = await response.json();
-
-        // Convert date to "yyyy-MM-dd" format
         const formatDate = (dateString: string) => {
           const date = new Date(dateString);
           const year = date.getFullYear();
@@ -101,28 +98,10 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!studentId || studentId.trim() === "") {
-      alert("Student ID is required to update the record.");
-      return;
-    }
-
     const formData = new FormData();
-    formData.append("student_id", studentData.studentId);
-    formData.append("first_name", studentData.firstName);
-    formData.append("last_name", studentData.lastName);
-    formData.append("gender", studentData.gender);
-    formData.append("department", studentData.department);
-    formData.append("course", studentData.course);
-    formData.append("year", studentData.year);
-    formData.append("date_of_birth", studentData.dateOfBirth);
-    formData.append("email", studentData.email);
-    formData.append("phone_number", studentData.phoneNumber);
-    formData.append("present_address", studentData.presentAddress);
-    formData.append("home_address", studentData.homeAddress);
-    formData.append("medical_history", studentData.medicalHistory);
-    formData.append("emergency_contact_name", studentData.emergencyContactName);
-    formData.append("emergency_contact_relation", studentData.emergencyContactRelation);
-    formData.append("emergency_contact_phone", studentData.emergencyContactPhone);
+    Object.entries(studentData).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
 
     if (newPhoto) {
       formData.append("student_photo", newPhoto);
@@ -136,8 +115,7 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
 
       if (!response.ok) {
         const result = await response.json();
-        console.error("Failed to update student record:", result.message);
-        alert("Failed to update student record.");
+        alert("Failed to update student record: " + result.message);
       } else {
         alert("Student record updated successfully!");
         onClose();
@@ -145,12 +123,6 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
     } catch (error) {
       console.error("Error submitting student data:", error);
       alert("An error occurred. Please try again.");
-    }
-  };
-
-  const handleCancel = () => {
-    if (window.confirm("Are you sure you want to cancel? Unsaved changes will be lost.")) {
-      onClose();
     }
   };
 
@@ -175,16 +147,19 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
       ) : error ? (
         <p className="text-red-500">{error}</p>
       ) : (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4" encType="multipart/form-data">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          encType="multipart/form-data"
+        >
           <div>
             <label className="block mb-1">Student ID</label>
             <input
               type="text"
               value={studentData.studentId}
-              onChange={(e) => handleChange("studentId", e.target.value)}
+              disabled
               className="border border-gray-300 rounded-md p-2 w-full"
               required
-              disabled
             />
           </div>
           <div>
@@ -328,10 +303,12 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
             <label className="block mb-1">Student Photo</label>
             {studentData.photoPath && (
               <div className="mb-2">
-                <img
+                <Image
                   src={studentData.photoPath}
                   alt="Student Photo"
-                  className="w-24 h-24 object-cover rounded-md"
+                  width={96}
+                  height={96}
+                  className="object-cover rounded-md"
                 />
               </div>
             )}
@@ -346,15 +323,12 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
           <div className="col-span-2 text-right mt-4">
             <button
               type="button"
-              onClick={handleCancel}
+              onClick={onClose}
               className="bg-gray-500 text-white py-2 px-4 rounded-md mr-2"
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className="bg-blue-600 text-white py-2 px-4 rounded-md"
-            >
+            <button type="submit" className="bg-blue-600 text-white py-2 px-4 rounded-md">
               Save Changes
             </button>
           </div>

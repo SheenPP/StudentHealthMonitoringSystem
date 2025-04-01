@@ -17,7 +17,6 @@ const StudentRegistration = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -28,11 +27,10 @@ const StudentRegistration = () => {
         });
 
         if (response.status === 200 && response.data) {
-          setIsLoggedIn(true);
           router.push("/student/dashboard");
         }
-      } catch (error) {
-        setIsLoggedIn(false);
+      } catch (_) {
+        // Not logged in, ignore
       }
     };
 
@@ -54,6 +52,7 @@ const StudentRegistration = () => {
       setLoading(false);
       return;
     }
+
     if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
       setError(
         "First and Last Name must contain only letters, spaces, dashes, and dots."
@@ -61,13 +60,13 @@ const StudentRegistration = () => {
       setLoading(false);
       return;
     }
+
     if (middleName && !nameRegex.test(middleName)) {
-      setError(
-        "Middle Name must contain only letters, spaces, dashes, and dots."
-      );
+      setError("Middle Name must contain only letters, spaces, dashes, and dots.");
       setLoading(false);
       return;
     }
+
     if (!passwordRegex.test(password)) {
       setError(
         "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character."
@@ -75,6 +74,7 @@ const StudentRegistration = () => {
       setLoading(false);
       return;
     }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       setLoading(false);
@@ -97,10 +97,12 @@ const StudentRegistration = () => {
 
       setSuccess(true);
       setTimeout(() => router.push("/student/login"), 2000);
-    } catch (error: any) {
-      setError(
-        error.response?.data?.error || "Registration failed. Please try again."
-      );
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.error || "Registration failed. Please try again.");
+      } else {
+        setError("Unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }
@@ -115,7 +117,6 @@ const StudentRegistration = () => {
 
         {success ? (
           <div className="flex flex-col items-center justify-center">
-            {/* Lottie Animation */}
             <DotLottieReact
               src="https://lottie.host/4de91c36-0282-476b-aca3-edbbd9a2135e/SwXwuD4sOK.lottie"
               loop={false}
@@ -132,11 +133,8 @@ const StudentRegistration = () => {
         ) : (
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Student ID */}
               <div>
-                <label htmlFor="studentId" className="block text-sm font-medium text-gray-700">
-                  Student ID
-                </label>
+                <label htmlFor="studentId" className="block text-sm font-medium text-gray-700">Student ID</label>
                 <input
                   type="text"
                   id="studentId"
@@ -147,11 +145,8 @@ const StudentRegistration = () => {
                 />
               </div>
 
-              {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email
-                </label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
                 <input
                   type="email"
                   id="email"
@@ -162,11 +157,8 @@ const StudentRegistration = () => {
                 />
               </div>
 
-              {/* First Name */}
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  First Name
-                </label>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
                 <input
                   type="text"
                   id="firstName"
@@ -177,11 +169,19 @@ const StudentRegistration = () => {
                 />
               </div>
 
-              {/* Last Name */}
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Last Name
-                </label>
+                <label htmlFor="middleName" className="block text-sm font-medium text-gray-700">Middle Name (Optional)</label>
+                <input
+                  type="text"
+                  id="middleName"
+                  value={middleName}
+                  onChange={(e) => setMiddleName(e.target.value)}
+                  className="mt-1 p-2 w-full border text-black border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
                 <input
                   type="text"
                   id="lastName"
@@ -193,11 +193,8 @@ const StudentRegistration = () => {
               </div>
             </div>
 
-            {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
               <input
                 type="password"
                 id="password"
@@ -207,21 +204,34 @@ const StudentRegistration = () => {
                 className="mt-1 p-2 w-full border text-black border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Must be at least 8 characters long, include uppercase, lowercase, number, and special character.
+                Must be at least 8 characters long and include uppercase, lowercase, number, and special character.
               </p>
             </div>
 
-            {/* Error Message */}
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
+              <input
+                type="password"
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="mt-1 p-2 w-full border text-black border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
             {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-            {/* Submit Button */}
-            <button type="submit" disabled={loading} className="w-full py-2 mt-4 bg-blue-500 text-white text-center rounded-md hover:bg-blue-600 transition">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2 mt-4 bg-blue-500 text-white text-center rounded-md hover:bg-blue-600 transition"
+            >
               {loading ? "Registering..." : "Register"}
             </button>
           </form>
         )}
 
-        {/* Already have an account? */}
         <p className="text-center text-gray-600 text-sm mt-4">
           Already have an account?{" "}
           <Link href="/student/login" className="text-blue-500 hover:underline">

@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import Image from 'next/image';
 
 interface UserProfileProps {
   user: {
@@ -8,7 +11,7 @@ interface UserProfileProps {
     lastname: string;
     role: string;
     position: string;
-    profile_picture: string; // Add profilePicture property
+    profile_picture: string;
   } | null;
   isCollapsed: boolean;
   error: string;
@@ -21,10 +24,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, isCollapsed, error }) =
         <div className="text-red-500">{error}</div>
       ) : user ? (
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
-          <img
-            src={user.profile_picture ? `${user.profile_picture}` : `https://i.pravatar.cc/150?u=${user.username}`}
+          <Image
+            src={user.profile_picture || `https://i.pravatar.cc/150?u=${user.username}`}
             alt="User Avatar"
-            className="w-10 h-10 rounded-full"
+            width={40}
+            height={40}
+            className="rounded-full"
           />
           {!isCollapsed && (
             <div className="ml-2">
@@ -35,10 +40,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, isCollapsed, error }) =
         </div>
       ) : (
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
-          <img
+          <Image
             src="https://i.pravatar.cc/150?u=guest"
             alt="Guest Avatar"
-            className="w-10 h-10 rounded-full"
+            width={40}
+            height={40}
+            className="rounded-full"
           />
           {!isCollapsed && (
             <div className="ml-2">

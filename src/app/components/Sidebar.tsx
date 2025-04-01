@@ -4,10 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  FiHome,
   FiGrid,
   FiFileText,
-  FiPlus,
   FiArchive,
   FiBookOpen,
   FiChevronLeft,
@@ -87,7 +85,13 @@ const Sidebar: React.FC = () => {
       </button>
 
       {/* User Profile */}
-      {user && <UserProfile user={user} isCollapsed={isCollapsed} error={error} />}
+      {user && (
+        <UserProfile
+          user={user}
+          isCollapsed={isCollapsed}
+          error={error}
+        />
+      )}
 
       {/* Navigation */}
       <nav className="flex-grow mt-4">

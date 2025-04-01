@@ -1,7 +1,5 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { FiX } from 'react-icons/fi';
-import { toast } from 'react-toastify';
 import { useOptions } from '../options/useOptions';
 import DepartmentSelect from '../options/DepartmentSelect';
 import CourseSelect from '../options/CourseSelect';

@@ -10,7 +10,7 @@ const MAX_ATTEMPTS = 5;
 const COOLDOWN_TIME = 3 * 60 * 1000;
 
 const StudentLogin = () => {
-  const [identifier, setIdentifier] = useState(""); 
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -43,7 +43,7 @@ const StudentLogin = () => {
     }
 
     try {
-      const response = await axios.post(
+      await axios.post(
         "/api/auth/studentlogin",
         { identifier, password },
         { withCredentials: true }
@@ -52,9 +52,11 @@ const StudentLogin = () => {
       setAttempts(0);
       localStorage.removeItem("lastLoginAttempt");
       router.push("/student/dashboard");
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.error || "Invalid credentials or account not approved.";
+    } catch (err: unknown) {
+      let errorMessage = "Invalid credentials or account not approved.";
+      if (axios.isAxiosError(err)) {
+        errorMessage = err.response?.data?.error || errorMessage;
+      }
       setError(errorMessage);
 
       const newAttempts = attempts + 1;
@@ -93,7 +95,6 @@ const StudentLogin = () => {
             />
           </div>
 
-          {/* Password Field with Show/Hide Feature */}
           <div className="relative">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
@@ -116,7 +117,6 @@ const StudentLogin = () => {
             </button>
           </div>
 
-          {/* Warning for login attempts */}
           {attempts > 0 && !isLocked && (
             <p className="text-yellow-500 text-sm text-center">
               Warning: {MAX_ATTEMPTS - attempts} attempts left before lockout.
@@ -138,7 +138,6 @@ const StudentLogin = () => {
           </button>
         </form>
 
-        {/* Forgot Password & Register Link */}
         <div className="mt-4 text-center">
           <p className="text-sm text-black">
             <Link href="/student/forgot-password" className="text-blue-500 hover:underline">
@@ -146,7 +145,7 @@ const StudentLogin = () => {
             </Link>
           </p>
           <p className="text-sm text-black mt-2">
-            Don't have an account?{" "}
+            Don&rsquo;t have an account?{" "}
             <Link href="/student/register" className="text-blue-500 hover:underline">
               Register here
             </Link>

@@ -11,7 +11,7 @@ import EmergencyContacts from "../components/EmergencyContacts";
 import Image from "next/image";
 import AddRecord from "../components/addrecord";
 import EditRecord from "../components/editRecord";
-import { Trie } from "../components/utils/trie";
+import { Trie } from "../components/utils/trie"; // ✅ Make sure this is generic-compatible
 
 interface Student {
   id: number;
@@ -43,16 +43,16 @@ const Record: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [recordAdded, setRecordAdded] = useState(false);
-  const [trie, setTrie] = useState<Trie | null>(null);
+  const [trie, setTrie] = useState<Trie<Student> | null>(null); // ✅ Use generic
 
   const fetchStudentData = async () => {
     try {
       const response = await fetch("/api/students");
-      const data = await response.json();
+      const data: Student[] = await response.json();
       setStudents(data);
 
-      const newTrie = new Trie();
-      data.forEach((student: Student) => {
+      const newTrie = new Trie<Student>();
+      data.forEach((student) => {
         const fullName1 = `${student.first_name} ${student.last_name}`;
         const fullName2 = `${student.last_name} ${student.first_name}`;
         const id = student.student_id;
@@ -77,7 +77,6 @@ const Record: React.FC = () => {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value.toLowerCase().trim();
     setSearchTerm(term);
-
     if (trie && term) {
       const results = trie.search(term);
       setFilteredStudents(results);
@@ -88,11 +87,11 @@ const Record: React.FC = () => {
 
   const handleSelectStudent = (student: Student) => {
     const key = student.last_name;
-    setStudentDetails((prevDetails) => {
-      if (!prevDetails[key]) {
-        prevDetails[key] = student;
+    setStudentDetails((prev) => {
+      if (!prev[key]) {
+        prev[key] = student;
       }
-      return { ...prevDetails };
+      return { ...prev };
     });
 
     if (!activeTabs.includes(key)) {
@@ -107,9 +106,9 @@ const Record: React.FC = () => {
   const handleCloseDetails = (key: string) => {
     setActiveTabs((prevTabs) => prevTabs.filter((tab) => tab !== key));
     setStudentDetails((prev) => {
-      const newDetails = { ...prev };
-      delete newDetails[key];
-      return newDetails;
+      const updated = { ...prev };
+      delete updated[key];
+      return updated;
     });
 
     if (activeTab === key) {
@@ -136,20 +135,15 @@ const Record: React.FC = () => {
 
   const closeEditModal = (updatedStudent?: Student) => {
     setIsEditModalOpen(false);
-
     if (updatedStudent) {
-      setStudents((prevStudents) =>
-        prevStudents?.map((student) =>
-          student.student_id === updatedStudent.student_id ? updatedStudent : student
-        ) || []
+      setStudents((prev) =>
+        prev?.map((s) => (s.student_id === updatedStudent.student_id ? updatedStudent : s)) || []
       );
-
-      setStudentDetails((prevDetails) => ({
-        ...prevDetails,
+      setStudentDetails((prev) => ({
+        ...prev,
         [updatedStudent.last_name]: updatedStudent,
       }));
     }
-
     setTimeout(fetchStudentData, 100);
   };
 
@@ -171,7 +165,7 @@ const Record: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent border-solid rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -189,11 +183,11 @@ const Record: React.FC = () => {
               value={searchTerm}
               onChange={handleSearch}
               placeholder="Search by name or ID..."
-              className="p-3 border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring focus:ring-blue-500 transition duration-200 w-full sm:w-3/4"
+              className="p-3 border border-gray-300 rounded-lg shadow-md focus:ring-blue-500 w-full sm:w-3/4"
             />
             <button
               onClick={openAddModal}
-              className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition duration-200"
+              className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition"
             >
               Add Record
             </button>
@@ -201,33 +195,30 @@ const Record: React.FC = () => {
 
           {isAddModalOpen && (
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
-              <div className="p-6 rounded-lg shadow-lg max-w-5xl h-5/6 overflow-hidden overflow-y-scroll bg-white">
+              <div className="p-6 rounded-lg shadow-lg max-w-5xl h-5/6 overflow-y-auto bg-white relative">
                 <button
-                  onClick={() => closeAddModal()}
-                  className="absolute top-2 right-2 p-2 text-gray-500 hover:text-gray-700"
+                  onClick={closeAddModal}
+                  className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
                 >
                   <FiX size={24} />
                 </button>
-                <AddRecord
-                  onAddSuccess={handleAddSuccess}
-                  onAddFailure={handleAddFailure}
-                />
+                <AddRecord onAddSuccess={handleAddSuccess} onAddFailure={handleAddFailure} />
               </div>
             </div>
           )}
 
           {isEditModalOpen && activeTab && studentDetails[activeTab] && (
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
-              <div className="p-6 rounded-lg shadow-lg max-w-5xl w-full h-5/6 overflow-hidden overflow-y-scroll bg-white">
+              <div className="p-6 rounded-lg shadow-lg max-w-5xl w-full h-5/6 overflow-y-auto bg-white relative">
                 <button
-                  onClick={() => closeEditModal()} // ✅ Fixed
-                  className="absolute top-2 right-2 p-2 text-gray-500 hover:text-gray-700"
+                  onClick={() => closeEditModal()}
+                  className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
                 >
                   <FiX size={24} />
                 </button>
                 <EditRecord
                   studentId={studentDetails[activeTab]!.student_id}
-                  onClose={(updatedStudent?: Student) => closeEditModal(updatedStudent)} // ✅ Fixed
+                  onClose={closeEditModal}
                 />
               </div>
             </div>
@@ -237,7 +228,7 @@ const Record: React.FC = () => {
             <ul className="bg-white rounded-lg shadow-lg">
               {filteredStudents.map((student) => (
                 <li
-                  key={`${student.id}-${student.last_name}`}
+                  key={student.student_id}
                   onClick={() => handleSelectStudent(student)}
                   className="cursor-pointer p-4 hover:bg-blue-100 transition-colors"
                 >
@@ -250,36 +241,33 @@ const Record: React.FC = () => {
           )}
 
           <div className="mb-4 flex flex-wrap">
-            {activeTabs.map((lastName) => {
-              const student = students?.find((s) => s.last_name === lastName);
-              return (
-                <div key={lastName} className="flex items-center mr-2 mb-2">
-                  <button
-                    onClick={() => setActiveTab(lastName)}
-                    className={`p-2 rounded-lg transition duration-200 ${
-                      activeTab === lastName
-                        ? "bg-blue-500 text-white shadow-lg"
-                        : "bg-gray-200 text-gray-700 border border-gray-300 hover:bg-gray-300"
-                    }`}
-                  >
-                    {lastName.toUpperCase()}
-                  </button>
-                  <button
-                    onClick={() => handleCloseDetails(lastName)}
-                    className="ml-1 p-1 text-red-500 hover:bg-red-100 rounded-full transition duration-200"
-                  >
-                    <FiX size={20} />
-                  </button>
-                </div>
-              );
-            })}
+            {activeTabs.map((lastName) => (
+              <div key={lastName} className="flex items-center mr-2 mb-2">
+                <button
+                  onClick={() => setActiveTab(lastName)}
+                  className={`p-2 rounded-lg ${
+                    activeTab === lastName
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  {lastName.toUpperCase()}
+                </button>
+                <button
+                  onClick={() => handleCloseDetails(lastName)}
+                  className="ml-1 p-1 text-red-500 hover:bg-red-100 rounded-full"
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+            ))}
           </div>
 
           {activeTab && studentDetails[activeTab] && (
             <div className="mt-4 bg-white rounded-lg p-4 shadow-lg relative">
               <button
                 onClick={openEditModal}
-                className="absolute top-2 right-2 p-2 text-blue-500 hover:text-blue-700"
+                className="absolute top-2 right-2 text-blue-500 hover:text-blue-700"
               >
                 <FiEdit size={20} />
               </button>
@@ -291,10 +279,10 @@ const Record: React.FC = () => {
                     alt="Student photo"
                     width={128}
                     height={128}
-                    className="w-32 h-32 object-cover rounded-full border border-gray-300"
+                    className="w-32 h-32 object-cover rounded-full border"
                   />
                 </div>
-                <div className="flex flex-col justify-center">
+                <div>
                   <p className="text-xl font-semibold">
                     Name: {studentDetails[activeTab]!.last_name.toUpperCase()}, {studentDetails[activeTab]!.first_name}
                   </p>

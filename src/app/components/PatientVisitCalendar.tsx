@@ -3,14 +3,13 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import "@fortawesome/fontawesome-free/css/all.css"; // Import for icons
-
-// Import custom styles
-import "../css/PatientVisitCalendar.css"; // Assuming styles are in a separate CSS file
+import { EventClickArg } from "@fullcalendar/core"; // ✅ Correct type for eventClick
+import "@fortawesome/fontawesome-free/css/all.css";
+import "../css/PatientVisitCalendar.css";
 
 interface PatientVisitCalendarProps {
   visitDates: { title: string; start: string; end?: string }[];
-  handleEventClick: (arg: any) => void;
+  handleEventClick: (arg: EventClickArg) => void; // ✅ Fixed type
 }
 
 const PatientVisitCalendar: React.FC<PatientVisitCalendarProps> = ({

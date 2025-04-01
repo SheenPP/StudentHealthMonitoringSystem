@@ -5,23 +5,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FiMenu, FiX, FiCalendar, FiUser, FiLogOut } from "react-icons/fi";
 import axios from "axios";
+import Image from "next/image"; // ✅ Optimized Image import
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<{ first_name: string; last_name: string; email?: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const router = useRouter();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // Securely fetch user info with credentials
         const response = await axios.get("/api/auth/getStudentUser", { withCredentials: true });
         setUser(response.data);
       } catch (err) {
         console.error("Error fetching user:", err);
-        setError("Failed to fetch user information.");
       } finally {
         setLoading(false);
       }
@@ -32,9 +30,9 @@ const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post("/api/auth/studentlogout", {}, { withCredentials: true }); // Clears cookies
-      setUser(null); // Remove user from state
-      router.push("/student/login"); // Redirect to login
+      await axios.post("/api/auth/studentlogout", {}, { withCredentials: true });
+      setUser(null);
+      router.push("/student/login");
     } catch (err) {
       console.error("Logout failed:", err);
     }
@@ -76,7 +74,13 @@ const Navbar: React.FC = () => {
             ) : user ? (
               <div className="flex items-center space-x-3">
                 <span className="text-gray-800 font-medium">{user.first_name} {user.last_name}</span>
-                <img src="/user-placeholder.png" alt="User Avatar" className="w-8 h-8 rounded-full border border-gray-300" />
+                <Image
+                  src="/user-placeholder.png"
+                  alt="User Avatar"
+                  width={32}
+                  height={32}
+                  className="rounded-full border border-gray-300"
+                />
                 <button onClick={handleLogout} className="flex items-center text-red-600 hover:text-red-800 font-medium">
                   <FiLogOut size={20} className="mr-2" />
                   Logout
@@ -105,7 +109,13 @@ const Navbar: React.FC = () => {
               ) : user ? (
                 <div className="flex flex-col space-y-3">
                   <span className="text-gray-800 font-medium">{user.first_name} {user.last_name}</span>
-                  <img src="/user-placeholder.png" alt="User Avatar" className="w-10 h-10 rounded-full border border-gray-300" />
+                  <Image
+                    src="/user-placeholder.png"
+                    alt="User Avatar"
+                    width={40}
+                    height={40}
+                    className="rounded-full border border-gray-300"
+                  />
                   <button onClick={handleLogout} className="flex items-center text-red-600 hover:text-red-800 font-medium">
                     <FiLogOut size={20} className="mr-2" />
                     Logout

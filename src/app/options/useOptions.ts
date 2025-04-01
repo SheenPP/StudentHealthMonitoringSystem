@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 export const useOptions = () => {
   const departments = [
     "College of Technology and Allied Sciences",

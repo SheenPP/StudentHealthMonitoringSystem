@@ -1,4 +1,3 @@
-// pages/student-register.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -7,6 +6,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import StudentRegistration from "../../components/StudentRegistration";
 import { FiMenu } from "react-icons/fi";
+import Image from "next/image";
 
 const StudentRegisterPage = () => {
   const [loading, setLoading] = useState(true);
@@ -25,7 +25,7 @@ const StudentRegisterPage = () => {
           setIsLoggedIn(true);
           router.push("/student/dashboard");
         }
-      } catch (error) {
+      } catch {
         setIsLoggedIn(false);
       } finally {
         setLoading(false);
@@ -48,7 +48,6 @@ const StudentRegisterPage = () => {
       className="min-h-screen bg-cover bg-center flex flex-col"
       style={{ backgroundImage: "url('/bisu.jpg')" }}
     >
-      {/* Overlay */}
       <div className="bg-black bg-opacity-50 min-h-screen flex flex-col">
         {/* Navbar */}
         <nav className="flex justify-between items-center p-4 md:p-6 bg-white bg-opacity-90 shadow-md">
@@ -91,7 +90,7 @@ const StudentRegisterPage = () => {
 
         {/* Mobile Dropdown Menu */}
         {isMenuOpen && (
-          <div className="md:hidden bg-white bg-opacity-90 shadow-md absolute w-full">
+          <div className="md:hidden bg-white bg-opacity-90 shadow-md absolute w-full z-50">
             <ul className="flex flex-col items-center p-4 space-y-3">
               <li>
                 <Link href="/" className="text-blue-500 font-medium">
@@ -125,7 +124,7 @@ const StudentRegisterPage = () => {
               HEALTH CARE
             </h1>
             <p className="mt-4 text-gray-200 leading-relaxed text-sm md:text-base">
-              Register to access our Student's Profiling Health Management
+              Register to access our Student&apos;s Profiling Health Management
               System. Keep your health records organized and secure.
             </p>
 
@@ -138,10 +137,13 @@ const StudentRegisterPage = () => {
           </div>
 
           <div className="md:w-1/2 mt-8 md:mt-0 flex justify-center">
-            <img
+            <Image
               src="/building.gif"
               alt="Healthcare GIF"
+              width={350}
+              height={350}
               className="w-4/5 md:w-full h-auto max-w-sm md:max-w-full"
+              priority
             />
           </div>
         </section>

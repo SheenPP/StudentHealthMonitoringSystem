@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { FiEdit, FiTrash, FiDownload } from "react-icons/fi";
 import ConfirmationDialog from "./ConfirmationDialog";
@@ -69,20 +69,23 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
     }
   };
 
-  const fetchUploadedFiles = async (consultation: Consultation) => {
-    try {
-      const response = await fetch(
-        `/api/files?student_id=${selectedStudent!.student_id}&consultation_type=${encodeURIComponent(
-          consultation.name
-        )}`
-      );
-      if (!response.ok) throw new Error();
-      const result = await response.json();
-      setUploadedFiles(result.files || []);
-    } catch {
-      setUploadedFiles([]);
-    }
-  };
+  const fetchUploadedFiles = useCallback(
+    async (consultation: Consultation) => {
+      try {
+        const response = await fetch(
+          `/api/files?student_id=${selectedStudent!.student_id}&consultation_type=${encodeURIComponent(
+            consultation.name
+          )}`
+        );
+        if (!response.ok) throw new Error();
+        const result = await response.json();
+        setUploadedFiles(result.files || []);
+      } catch {
+        setUploadedFiles([]);
+      }
+    },
+    [selectedStudent]
+  );
 
   const handleUpload = async () => {
     if (!file || !selectedConsultation) return;
@@ -180,7 +183,7 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
     if (isOpen && selectedConsultation) {
       fetchUploadedFiles(selectedConsultation);
     }
-  }, [isOpen, selectedConsultation]);
+  }, [isOpen, selectedConsultation, fetchUploadedFiles]);
 
   return (
     <div className="p-6">
@@ -251,33 +254,32 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
                   <ul className="space-y-2">
                     {uploadedFiles.length === 0 && <li>No files uploaded yet.</li>}
                     {uploadedFiles.map((file, index) => (
-  <li
-    key={file.id}
-    className="flex justify-between items-center bg-gray-50 p-3 rounded border"
-  >
-    <div className="flex items-center gap-3">
-      <span className="w-6 h-6 flex items-center justify-center text-sm text-black ">
-        {index + 1}
-      </span>
-      <span className="text-gray-800">{file.file_name}</span>
-    </div>
-    <div className="flex space-x-3">
-      <FiEdit
-        className="text-blue-600 cursor-pointer"
-        onClick={() => setEditingFile(file.id)}
-      />
-      <FiTrash
-        className="text-red-600 cursor-pointer"
-        onClick={() => confirmDelete(file.id, file.file_path)}
-      />
-      <FiDownload
-        className="text-green-600 cursor-pointer"
-        onClick={() => handleDownload(file.file_path)}
-      />
-    </div>
-  </li>
-))}
-
+                      <li
+                        key={file.id}
+                        className="flex justify-between items-center bg-gray-50 p-3 rounded border"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="w-6 h-6 flex items-center justify-center text-sm font-bold text-gray-700 bg-blue-100 rounded-full">
+                            {index + 1}
+                          </span>
+                          <span className="text-gray-800">{file.file_name}</span>
+                        </div>
+                        <div className="flex space-x-3">
+                          <FiEdit
+                            className="text-blue-600 cursor-pointer"
+                            onClick={() => setEditingFile(file.id)}
+                          />
+                          <FiTrash
+                            className="text-red-600 cursor-pointer"
+                            onClick={() => confirmDelete(file.id, file.file_path)}
+                          />
+                          <FiDownload
+                            className="text-green-600 cursor-pointer"
+                            onClick={() => handleDownload(file.file_path)}
+                          />
+                        </div>
+                      </li>
+                    ))}
                   </ul>
                 </div>
 

@@ -67,7 +67,8 @@ const Dashboard = () => {
     totalDiagnoses: 0,
     patientData: [],
   });
-  const [visitDates, setVisitDates] = useState<any[]>([]);
+
+  const [visitDates, setVisitDates] = useState<{ title: string; start: string; end?: string }[]>([]);
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
@@ -80,8 +81,7 @@ const Dashboard = () => {
 
         const extractedDates = data.patientData.map((item) => ({
           title: "Patient Visit",
-          date: item.date_of_visit,
-          allDay: true,
+          start: item.date_of_visit,
         }));
         setVisitDates(extractedDates);
       } catch (error) {
@@ -120,7 +120,6 @@ const Dashboard = () => {
         <div className="flex-1 p-8 space-y-8">
           <div className="flex items-center justify-between">
             <h1 className="text-4xl font-bold text-gray-900">Clinic Dashboard</h1>
-            
             <button
               className="bg-gradient-to-r from-blue-500 to-teal-400 text-white px-5 py-2 rounded-lg shadow-md hover:shadow-lg transition hover:scale-105"
               onClick={() => setShowModal(true)}
@@ -153,7 +152,7 @@ const Dashboard = () => {
 
           {/* Charts & Calendar */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {isLoading ? <SkeletonChart /> : <PatientVisitCalendar visitDates={visitDates} />}
+            {isLoading ? <SkeletonChart /> : <PatientVisitCalendar visitDates={visitDates} handleEventClick={() => {}} />}
             <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">
                 Patients Treated by Department, Course, and Year

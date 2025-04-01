@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useOptions } from "../options/useOptions";
 import DepartmentSelect from "../options/DepartmentSelect";
@@ -64,7 +66,8 @@ const HealthRecordForm: React.FC<HealthRecordFormProps> = ({ onClose }) => {
         const errorData = await response.json();
         setError(errorData.message || "❌ Failed to add health record.");
       }
-    } catch (err) {
+    } catch (error) {
+      console.error("Submission error:", error);
       setError("⚠️ Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
@@ -123,7 +126,9 @@ const HealthRecordForm: React.FC<HealthRecordFormProps> = ({ onClose }) => {
         <div className="grid grid-cols-3 gap-4">
           <DepartmentSelect
             department={formData.department}
-            setDepartment={(value) => setFormData({ ...formData, department: value, course: "" })}
+            setDepartment={(value) =>
+              setFormData({ ...formData, department: value, course: "" })
+            }
             departments={departments}
           />
           <CourseSelect

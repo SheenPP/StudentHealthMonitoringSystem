@@ -25,6 +25,7 @@ export default function StudentDashboard() {
 
         setStudent(response.data);
       } catch (error) {
+        console.error("Authentication error:", error); // ✅ Use the error here
         // If user is not authenticated, redirect to login page
         router.push("/student/login");
       } finally {
@@ -69,7 +70,6 @@ export default function StudentDashboard() {
               Manage Appointments
             </button>
           </Link>
-          
         </div>
       </div>
     </>
