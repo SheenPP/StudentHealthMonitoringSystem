@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import Sidebar from "../../components/AdminSidebar";
-import { useRouter } from "next/navigation";
 import useAdminAuth from "../../hooks/useAdminAuth";
 import { Loader } from "lucide-react";
 
@@ -19,7 +18,6 @@ export default function AdminApprovals() {
   const [pendingUsers, setPendingUsers] = useState<Account[]>([]);
   const [pendingAdmins, setPendingAdmins] = useState<Account[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const router = useRouter();
 
   const fetchPendingAccounts = useCallback(async () => {
     try {

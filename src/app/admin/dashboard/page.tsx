@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../components/AdminSidebar";
-import Header from "../../components/Header"; // ✅ Import Header here
+import Header from "../../components/Header";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import {
@@ -14,12 +14,25 @@ import {
 } from "@heroicons/react/24/outline";
 import useAdminAuth from "../../hooks/useAdminAuth";
 
+interface Stats {
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
+interface StatCardProps {
+  title: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  stats: Stats;
+  color: string;
+}
+
 export default function AdminDashboard() {
   const { authChecked, loading: authLoading } = useAdminAuth();
-  const [appointmentStats, setAppointmentStats] = useState({ pending: 0, approved: 0, rejected: 0 });
-  const [userStats, setUserStats] = useState({ pending: 0, approved: 0, rejected: 0 });
-  const [userOnly, setUserOnly] = useState({ pending: 0, approved: 0, rejected: 0 });
-  const [studentOnly, setStudentOnly] = useState({ pending: 0, approved: 0, rejected: 0 });
+  const [appointmentStats, setAppointmentStats] = useState<Stats>({ pending: 0, approved: 0, rejected: 0 });
+  const [userStats, setUserStats] = useState<Stats>({ pending: 0, approved: 0, rejected: 0 });
+  const [userOnly, setUserOnly] = useState<Stats>({ pending: 0, approved: 0, rejected: 0 });
+  const [studentOnly, setStudentOnly] = useState<Stats>({ pending: 0, approved: 0, rejected: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
   const router = useRouter();
 
@@ -46,7 +59,7 @@ export default function AdminDashboard() {
     }
   }, [authChecked]);
 
-  const StatCard = ({ title, icon: Icon, stats, color }: any) => (
+  const StatCard = ({ title, icon: Icon, stats, color }: StatCardProps) => (
     <div className="p-6 bg-white border border-gray-200 rounded-xl shadow hover:shadow-lg transition-all duration-300">
       <div className="flex items-center gap-3 mb-4">
         <Icon className={`w-6 h-6 ${color}`} />
@@ -87,7 +100,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      {/* ✅ Header at the top */}
       <Header />
 
       <div className="flex flex-1">

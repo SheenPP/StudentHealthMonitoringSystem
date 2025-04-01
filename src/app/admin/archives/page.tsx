@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import axios from "axios";
 import Sidebar from "../../components/AdminSidebar";
 import Header from "../../components/Header";
-import useAdminAuth from "../../hooks/useAdminAuth"; // ✅ import auth hook
+import useAdminAuth from "../../hooks/useAdminAuth";
 
 type Archive = {
   id: string;

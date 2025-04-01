@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation"; // ❌ Not needed — will remove
 import FileList from "../../components/FileList";
 import Sidebar from "../../components/AdminSidebar";
 import Navbar from "../../components/Header";
-import useAdminAuth from "../../hooks/useAdminAuth"; // ✅ use the hook
+import useAdminAuth from "../../hooks/useAdminAuth";
 
 // ✅ Skeleton loader layout
 const SkeletonLayout = () => (
@@ -26,9 +25,7 @@ const SkeletonLayout = () => (
 );
 
 const Records = () => {
-  const router = useRouter();
   const { authChecked, loading: authLoading } = useAdminAuth(); // ✅ using auth hook
-
 
   // ✅ Show skeleton layout during loading or unauthenticated state
   if (authLoading || authChecked === false) {
