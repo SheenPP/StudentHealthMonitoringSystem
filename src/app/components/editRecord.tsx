@@ -1,340 +1,250 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import { useOptions } from "../options/useOptions";
-import DepartmentSelect from "../options/DepartmentSelect";
-import CourseSelect from "../options/CourseSelect";
-import YearSelect from "../options/YearSelect";
-import Image from "next/image";
+'use client';
+import React, { useState, useEffect } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useOptions } from '../options/useOptions';
+import DepartmentSelect from '../options/DepartmentSelect';
+import CourseSelect from '../options/CourseSelect';
+import YearSelect from '../options/YearSelect';
 
 interface EditRecordProps {
   studentId: string;
-  onClose: () => void;
+  onClose: (updatedStudent?: any) => void;
 }
 
 const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
-  const [studentData, setStudentData] = useState({
-    studentId: "",
-    firstName: "",
-    lastName: "",
-    gender: "",
-    department: "",
-    course: "",
-    year: "",
-    dateOfBirth: "",
-    email: "",
-    phoneNumber: "",
-    presentAddress: "",
-    homeAddress: "",
-    medicalHistory: "",
-    emergencyContactName: "",
-    emergencyContactRelation: "",
-    emergencyContactPhone: "",
-    photoPath: "",
-  });
-
+  const supabase = createClientComponentClient();
+  const [studentData, setStudentData] = useState<any>(null);
   const [newPhoto, setNewPhoto] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const { departments, coursesByDepartment, years } = useOptions();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!studentId || studentId.trim() === "") {
-      setError("Student ID is required to edit a record.");
-      setIsLoading(false);
-      return;
-    }
-
-    const fetchStudentData = async () => {
-      setIsLoading(true);
+    const fetchStudent = async () => {
       try {
-        const response = await fetch(`/api/students?id=${studentId.trim()}`);
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to fetch student data");
-        }
-
-        const result = await response.json();
-        const formatDate = (dateString: string) => {
-          const date = new Date(dateString);
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, "0");
-          const day = String(date.getDate()).padStart(2, "0");
-          return `${year}-${month}-${day}`;
-        };
-
+        const res = await fetch(`/api/students?id=${studentId}`);
+        const data = await res.json();
         setStudentData({
-          studentId: result.student_id || "",
-          firstName: result.first_name || "",
-          lastName: result.last_name || "",
-          gender: result.gender || "",
-          department: result.department || "",
-          course: result.course || "",
-          year: result.year || "",
-          dateOfBirth: result.date_of_birth ? formatDate(result.date_of_birth) : "",
-          email: result.email || "",
-          phoneNumber: result.phone_number || "",
-          presentAddress: result.present_address || "",
-          homeAddress: result.home_address || "",
-          medicalHistory: result.medical_history || "",
-          emergencyContactName: result.emergency_contact_name || "",
-          emergencyContactRelation: result.emergency_contact_relation || "",
-          emergencyContactPhone: result.emergency_contact_phone || "",
-          photoPath: result.photo_path || "",
+          ...data,
+          date_of_birth: data.date_of_birth?.split('T')[0] || '',
         });
-
-        setError(null);
       } catch (error) {
-        console.error("Error fetching student data:", error);
-        setError("Error fetching student data. Please try again.");
+        console.error('Error loading student data:', error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-
-    fetchStudentData();
+    fetchStudent();
   }, [studentId]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const formData = new FormData();
-    Object.entries(studentData).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
+    let photoUrl = studentData.photo_path;
 
     if (newPhoto) {
-      formData.append("student_photo", newPhoto);
-    }
+      const fileExt = newPhoto.name.split('.').pop();
+      const filePath = `student-photos/${studentId}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('student-photos')
+        .upload(filePath, newPhoto, {
+          upsert: true,
+          contentType: newPhoto.type,
+        });
 
-    try {
-      const response = await fetch(`/api/students?id=${studentId.trim()}`, {
-        method: "PUT",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const result = await response.json();
-        alert("Failed to update student record: " + result.message);
-      } else {
-        alert("Student record updated successfully!");
-        onClose();
+      if (uploadError) {
+        alert('Image upload failed.');
+        return;
       }
-    } catch (error) {
-      console.error("Error submitting student data:", error);
-      alert("An error occurred. Please try again.");
+
+      const { data } = supabase.storage.from('student-photos').getPublicUrl(filePath);
+      photoUrl = data.publicUrl;
+    }
+
+    const response = await fetch(`/api/students?id=${studentId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ...studentData, photo_path: photoUrl }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      alert(`Update failed: ${data.message}`);
+    } else {
+      const updated = { ...studentData, photo_path: photoUrl };
+      onClose(updated); // ✅ this triggers toast from parent
     }
   };
 
-  const handleChange = (field: string, value: string) => {
-    setStudentData((prev) => ({ ...prev, [field]: value }));
+  const handleChange = (field: string, value: any) => {
+    setStudentData((prev: any) => ({ ...prev, [field]: value }));
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setNewPhoto(e.target.files[0]);
-    }
-  };
+  if (loading || !studentData) {
+    return <p className="text-center py-10">Loading student record...</p>;
+  }
 
   return (
-    <>
-      <h2 className="text-xl font-semibold mb-4">Edit Student Record</h2>
-
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent border-solid rounded-full animate-spin"></div>
+    <div className="relative">
+      <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label className="block mb-1">Student ID</label>
+          <input type="text" value={studentData.student_id} className="border p-2 w-full" disabled />
         </div>
-      ) : error ? (
-        <p className="text-red-500">{error}</p>
-      ) : (
-        <form
-          onSubmit={handleSubmit}
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          encType="multipart/form-data"
-        >
-          <div>
-            <label className="block mb-1">Student ID</label>
-            <input
-              type="text"
-              value={studentData.studentId}
-              disabled
-              className="border border-gray-300 rounded-md p-2 w-full"
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-1">First Name</label>
-            <input
-              type="text"
-              value={studentData.firstName}
-              onChange={(e) => handleChange("firstName", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Last Name</label>
-            <input
-              type="text"
-              value={studentData.lastName}
-              onChange={(e) => handleChange("lastName", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Gender</label>
-            <select
-              value={studentData.gender}
-              onChange={(e) => handleChange("gender", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-              required
-            >
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-
-          <DepartmentSelect
-            department={studentData.department}
-            setDepartment={(value) => handleChange("department", value)}
-            departments={departments}
+        <div>
+          <label className="block mb-1">First Name</label>
+          <input
+            type="text"
+            value={studentData.first_name}
+            onChange={(e) => handleChange('first_name', e.target.value)}
+            className="border p-2 w-full"
           />
-
-          <CourseSelect
-            department={studentData.department}
-            course={studentData.course}
-            setCourse={(value) => handleChange("course", value)}
-            coursesByDepartment={coursesByDepartment}
+        </div>
+        <div>
+          <label className="block mb-1">Last Name</label>
+          <input
+            type="text"
+            value={studentData.last_name}
+            onChange={(e) => handleChange('last_name', e.target.value)}
+            className="border p-2 w-full"
           />
+        </div>
 
-          <YearSelect
-            year={studentData.year}
-            setYear={(value) => handleChange("year", value)}
-            years={years}
-          />
-
-          <div>
-            <label className="block mb-1">Date of Birth</label>
-            <input
-              type="date"
-              value={studentData.dateOfBirth}
-              onChange={(e) => handleChange("dateOfBirth", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Email</label>
-            <input
-              type="email"
-              value={studentData.email}
-              onChange={(e) => handleChange("email", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Phone Number</label>
-            <input
-              type="text"
-              value={studentData.phoneNumber}
-              onChange={(e) => handleChange("phoneNumber", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Present Address</label>
-            <input
-              type="text"
-              value={studentData.presentAddress}
-              onChange={(e) => handleChange("presentAddress", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Home Address</label>
-            <input
-              type="text"
-              value={studentData.homeAddress}
-              onChange={(e) => handleChange("homeAddress", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Medical History</label>
-            <textarea
-              value={studentData.medicalHistory}
-              onChange={(e) => handleChange("medicalHistory", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Emergency Contact Name</label>
-            <input
-              type="text"
-              value={studentData.emergencyContactName}
-              onChange={(e) => handleChange("emergencyContactName", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Emergency Contact Relation</label>
-            <input
-              type="text"
-              value={studentData.emergencyContactRelation}
-              onChange={(e) => handleChange("emergencyContactRelation", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Emergency Contact Phone</label>
-            <input
-              type="text"
-              value={studentData.emergencyContactPhone}
-              onChange={(e) => handleChange("emergencyContactPhone", e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-full"
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-1">Student Photo</label>
-            {studentData.photoPath && (
-              <div className="mb-2">
-                <Image
-                  src={studentData.photoPath}
-                  alt="Student Photo"
-                  width={96}
-                  height={96}
-                  className="object-cover rounded-md"
+        <div>
+          <label className="block mb-1">Gender</label>
+          <div className="flex gap-4">
+            {['Male', 'Female'].map((g) => (
+              <label key={g}>
+                <input
+                  type="radio"
+                  value={g}
+                  checked={studentData.gender === g}
+                  onChange={(e) => handleChange('gender', e.target.value)}
+                  className="mr-1"
                 />
-              </div>
-            )}
-            <input
-              type="file"
-              onChange={handlePhotoChange}
-              className="border border-gray-300 rounded-md p-2 w-full"
-              accept="image/*"
-            />
+                {g}
+              </label>
+            ))}
           </div>
+        </div>
 
-          <div className="col-span-2 text-right mt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-gray-500 text-white py-2 px-4 rounded-md mr-2"
-            >
-              Cancel
-            </button>
-            <button type="submit" className="bg-blue-600 text-white py-2 px-4 rounded-md">
-              Save Changes
-            </button>
-          </div>
-        </form>
-      )}
-    </>
+        <DepartmentSelect
+          department={studentData.department}
+          setDepartment={(val) => handleChange('department', val)}
+          departments={departments}
+        />
+        <CourseSelect
+          department={studentData.department}
+          course={studentData.course}
+          setCourse={(val) => handleChange('course', val)}
+          coursesByDepartment={coursesByDepartment}
+        />
+        <YearSelect year={studentData.year} setYear={(val) => handleChange('year', val)} years={years} />
+
+        <div>
+          <label className="block mb-1">Date of Birth</label>
+          <input
+            type="date"
+            value={studentData.date_of_birth}
+            onChange={(e) => handleChange('date_of_birth', e.target.value)}
+            className="border p-2 w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1">Email</label>
+          <input type="email" value={studentData.email} className="border p-2 w-full" readOnly />
+        </div>
+
+        <div>
+          <label className="block mb-1">Phone Number</label>
+          <input
+            type="text"
+            value={studentData.phone_number}
+            onChange={(e) => handleChange('phone_number', e.target.value)}
+            className="border p-2 w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1">Present Address</label>
+          <input
+            type="text"
+            value={studentData.present_address}
+            onChange={(e) => handleChange('present_address', e.target.value)}
+            className="border p-2 w-full"
+          />
+        </div>
+        <div>
+          <label className="block mb-1">Home Address</label>
+          <input
+            type="text"
+            value={studentData.home_address}
+            onChange={(e) => handleChange('home_address', e.target.value)}
+            className="border p-2 w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1">Medical History</label>
+          <textarea
+            value={studentData.medical_history}
+            onChange={(e) => handleChange('medical_history', e.target.value)}
+            className="border p-2 w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1">Emergency Contact Name</label>
+          <input
+            type="text"
+            value={studentData.emergency_contact_name}
+            onChange={(e) => handleChange('emergency_contact_name', e.target.value)}
+            className="border p-2 w-full"
+          />
+        </div>
+        <div>
+          <label className="block mb-1">Emergency Contact Relation</label>
+          <input
+            type="text"
+            value={studentData.emergency_contact_relation}
+            onChange={(e) => handleChange('emergency_contact_relation', e.target.value)}
+            className="border p-2 w-full"
+          />
+        </div>
+        <div>
+          <label className="block mb-1">Emergency Contact Phone</label>
+          <input
+            type="text"
+            value={studentData.emergency_contact_phone}
+            onChange={(e) => handleChange('emergency_contact_phone', e.target.value)}
+            className="border p-2 w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1">Student Photo</label>
+          {studentData.photo_path && (
+            <img src={studentData.photo_path} alt="Profile" className="w-24 h-24 mb-2 rounded object-cover" />
+          )}
+          <input
+            type="file"
+            onChange={(e) => setNewPhoto(e.target.files?.[0] || null)}
+            className="border p-2 w-full"
+            accept="image/*"
+          />
+        </div>
+
+        <div className="col-span-3 flex justify-end gap-4 mt-4">
+          <button type="button" onClick={() => onClose()} className="bg-gray-500 text-white px-4 py-2 rounded-md">
+            Cancel
+          </button>
+          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

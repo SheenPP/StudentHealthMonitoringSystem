@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import useAuth from "../hooks/useAuth"; // ✅ Secure auth hook
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import Image from "next/image";
@@ -18,10 +20,13 @@ type SortState = {
 };
 
 const Logs = () => {
+  const { user, authChecked, loading: authLoading } = useAuth(); // 🔐 secure
+  const router = useRouter();
   const [images, setImages] = useState<ImageData[]>([]);
   const [modalImage, setModalImage] = useState<ImageData | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [loadingImages, setLoadingImages] = useState(true);
   const [sortState, setSortState] = useState<SortState>({
     key: "uploaded_at",
     order: "desc",
@@ -31,18 +36,25 @@ const Logs = () => {
 
   const fetchLogs = useCallback(async () => {
     try {
+      setLoadingImages(true);
       const res = await fetch("/api/logs");
       if (!res.ok) throw new Error("Failed to fetch logs");
       const data: ImageData[] = await res.json();
       setImages(data);
     } catch {
       setError("Failed to load images.");
+    } finally {
+      setLoadingImages(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    if (authChecked && !user) {
+      router.push("/");
+    } else if (authChecked) {
+      fetchLogs();
+    }
+  }, [authChecked, user, fetchLogs, router]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,6 +98,25 @@ const Logs = () => {
   const currentImages = sortedImages.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(sortedImages.length / imagesPerPage);
 
+  const SkeletonTableRow = () => (
+    <tr className="animate-pulse border-t">
+      <td className="p-3">
+        <div className="w-16 h-16 bg-gray-200 rounded-md" />
+      </td>
+      <td className="p-3">
+        <div className="h-4 w-32 bg-gray-200 rounded" />
+      </td>
+      <td className="p-3">
+        <div className="h-4 w-40 bg-gray-200 rounded" />
+      </td>
+      <td className="p-3 text-center">
+        <div className="h-4 w-20 bg-gray-200 mx-auto rounded" />
+      </td>
+    </tr>
+  );
+
+  const showSkeleton = authLoading || loadingImages;
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <Header />
@@ -127,38 +158,42 @@ const Logs = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentImages.map((image) => (
-                  <tr key={image.id} className="border-t">
-                    <td className="p-3">
-                      <Image
-                        src={image.image_url}
-                        alt={image.filename}
-                        width={64}
-                        height={64}
-                        className="w-16 h-16 object-cover rounded-md cursor-pointer"
-                        onClick={() => setModalImage(image)}
-                      />
-                    </td>
-                    <td className="p-3">{image.filename}</td>
-                    <td className="p-3">
-                      {new Date(image.uploaded_at).toLocaleString()}
-                    </td>
-                    <td className="p-3 text-center space-x-2">
-                      <button
-                        onClick={() => setModalImage(image)}
-                        className="text-blue-600 hover:underline"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleDelete(image.id)}
-                        className="text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {showSkeleton
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <SkeletonTableRow key={i} />
+                    ))
+                  : currentImages.map((image) => (
+                      <tr key={image.id} className="border-t">
+                        <td className="p-3">
+                          <Image
+                            src={image.image_url}
+                            alt={image.filename}
+                            width={64}
+                            height={64}
+                            className="w-16 h-16 object-cover rounded-md cursor-pointer"
+                            onClick={() => setModalImage(image)}
+                          />
+                        </td>
+                        <td className="p-3">{image.filename}</td>
+                        <td className="p-3">
+                          {new Date(image.uploaded_at).toLocaleString()}
+                        </td>
+                        <td className="p-3 text-center space-x-2">
+                          <button
+                            onClick={() => setModalImage(image)}
+                            className="text-blue-600 hover:underline"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => handleDelete(image.id)}
+                            className="text-red-600 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>

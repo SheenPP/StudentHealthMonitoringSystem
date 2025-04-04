@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import Sidebar from "../../components/AdminSidebar";
 import useAdminAuth from "../../hooks/useAdminAuth";
-import { Loader } from "lucide-react";
+import { Dialog } from "@headlessui/react";
 
 interface Account {
   id: number;
@@ -13,18 +13,24 @@ interface Account {
 }
 
 export default function AdminApprovals() {
-  const { authChecked, loading: authLoading } = useAdminAuth();
+  const { authChecked } = useAdminAuth();
   const [pendingStudents, setPendingStudents] = useState<Account[]>([]);
   const [pendingUsers, setPendingUsers] = useState<Account[]>([]);
   const [pendingAdmins, setPendingAdmins] = useState<Account[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    id: number | null;
+    type: string;
+    action: string;
+  }>({ open: false, id: null, type: "", action: "" });
 
   const fetchPendingAccounts = useCallback(async () => {
     try {
       const response = await axios.get("/api/admin/getPendingAccounts", {
         withCredentials: true,
       });
-
       setPendingStudents(response.data.students);
       setPendingUsers(response.data.users);
       setPendingAdmins(response.data.admins);
@@ -41,39 +47,34 @@ export default function AdminApprovals() {
     }
   }, [authChecked, fetchPendingAccounts]);
 
-  const updateStatus = async (id: number, type: string, status: string) => {
+  const handleConfirm = (id: number, type: string, action: string) => {
+    setConfirmModal({ open: true, id, type, action });
+  };
+
+  const confirmAction = async () => {
+    const { id, type, action } = confirmModal;
+    if (!id || !type) return;
+
     try {
       await axios.put(
         "/api/admin/updateAccountStatus",
-        { id, type, status },
+        { id, type, status: action },
         { withCredentials: true }
       );
-      fetchPendingAccounts(); // Refresh list
+      fetchPendingAccounts();
     } catch (error) {
       console.error(`Error updating ${type} status:`, error);
+    } finally {
+      setConfirmModal({ open: false, id: null, type: "", action: "" });
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-100">
-        <div className="flex flex-col items-center">
-          <Loader className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="mt-2 text-gray-700 text-lg">Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen">
-      <div className="bg-gray-200 transition-all duration-300">
-        <Sidebar />
-      </div>
-
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
       <div className="flex-1 p-6">
-        <h1 className="text-2xl font-semibold">Pending Approvals</h1>
-        <p className="text-gray-600 mt-2">Manage student, user, and admin approvals.</p>
+        <h1 className="text-2xl font-semibold mb-2">Pending Approvals</h1>
+        <p className="text-gray-600 mb-6">Manage student, user, and admin approvals.</p>
 
         {loadingData ? (
           <>
@@ -83,27 +84,41 @@ export default function AdminApprovals() {
           </>
         ) : (
           <>
-            <ApprovalTable
-              title="Pending Students"
-              data={pendingStudents}
-              type="student"
-              updateStatus={updateStatus}
-            />
-            <ApprovalTable
-              title="Pending Users"
-              data={pendingUsers}
-              type="user"
-              updateStatus={updateStatus}
-            />
-            <ApprovalTable
-              title="Pending Admins"
-              data={pendingAdmins}
-              type="admin"
-              updateStatus={updateStatus}
-            />
+            <ApprovalTable title="Pending Students" data={pendingStudents} type="student" onAction={handleConfirm} />
+            <ApprovalTable title="Pending Users" data={pendingUsers} type="user" onAction={handleConfirm} />
+            <ApprovalTable title="Pending Admins" data={pendingAdmins} type="admin" onAction={handleConfirm} />
           </>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      <Dialog open={confirmModal.open} onClose={() => setConfirmModal({ ...confirmModal, open: false })}>
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <Dialog.Panel className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
+            <Dialog.Title className="text-lg font-medium mb-3">Confirm Action</Dialog.Title>
+            <p className="text-sm text-gray-700 mb-4">
+              Are you sure you want to{" "}
+              <strong className="capitalize">{confirmModal.action}</strong> this {confirmModal.type}?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmModal({ ...confirmModal, open: false })}
+                className="bg-gray-200 px-4 py-2 rounded-md"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAction}
+                className={`px-4 py-2 rounded-md text-white ${
+                  confirmModal.action === "approved" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {confirmModal.action === "approved" ? "Approve" : "Reject"}
+              </button>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
     </div>
   );
 }
@@ -112,48 +127,52 @@ interface ApprovalTableProps {
   title: string;
   data: Account[];
   type: string;
-  updateStatus: (id: number, type: string, status: string) => void;
+  onAction: (id: number, type: string, action: string) => void;
 }
 
-const ApprovalTable = ({ title, data, type, updateStatus }: ApprovalTableProps) => {
+const ApprovalTable = ({ title, data, type, onAction }: ApprovalTableProps) => {
   if (data.length === 0) return null;
 
   return (
-    <div className="mt-6">
-      <h2 className="text-lg font-medium">{title}</h2>
-      <table className="w-full mt-2 border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-200">
-            <th className="border p-2">ID</th>
-            <th className="border p-2">Name</th>
-            <th className="border p-2">Email</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item) => (
-            <tr key={item.id}>
-              <td className="border p-2">{item.id}</td>
-              <td className="border p-2">{item.name}</td>
-              <td className="border p-2">{item.email}</td>
-              <td className="border p-2">
-                <button
-                  onClick={() => updateStatus(item.id, type, "approved")}
-                  className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
-                >
-                  Approve
-                </button>
-                <button
-                  onClick={() => updateStatus(item.id, type, "rejected")}
-                  className="bg-red-500 text-white px-2 py-1 rounded ml-2 hover:bg-red-600"
-                >
-                  Reject
-                </button>
-              </td>
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold mb-2">{title}</h2>
+      <div className="overflow-x-auto rounded border border-gray-300 shadow">
+        <table className="w-full table-fixed text-sm">
+          <thead className="bg-gray-100 text-gray-700 uppercase">
+            <tr>
+              <th className="p-3 w-[60px] border text-left">ID</th>
+              <th className="p-3 w-1/4 border text-left">Name</th>
+              <th className="p-3 w-1/3 border text-left">Email</th>
+              <th className="p-3 w-[150px] border text-left">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((item) => (
+              <tr key={item.id} className="hover:bg-gray-50">
+                <td className="p-3 border">{item.id}</td>
+                <td className="p-3 border truncate">{item.name}</td>
+                <td className="p-3 border truncate">{item.email}</td>
+                <td className="p-3 border">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onAction(item.id, type, "approved")}
+                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => onAction(item.id, type, "rejected")}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
@@ -164,10 +183,10 @@ const SkeletonTable = ({ title }: { title: string }) => (
     <div className="mt-2 space-y-2 border border-gray-200 rounded">
       {[...Array(4)].map((_, index) => (
         <div key={index} className="grid grid-cols-4 gap-4 px-4 py-2">
-          <div className="h-4 bg-gray-300 rounded" />
-          <div className="h-4 bg-gray-300 rounded" />
-          <div className="h-4 bg-gray-300 rounded" />
-          <div className="h-4 bg-gray-300 rounded" />
+          <div className="h-4 bg-gray-300 rounded col-span-1" />
+          <div className="h-4 bg-gray-300 rounded col-span-1" />
+          <div className="h-4 bg-gray-300 rounded col-span-1" />
+          <div className="h-4 bg-gray-300 rounded col-span-1" />
         </div>
       ))}
     </div>

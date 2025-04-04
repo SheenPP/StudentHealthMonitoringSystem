@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useOptions } from '../options/useOptions';
 import DepartmentSelect from '../options/DepartmentSelect';
 import CourseSelect from '../options/CourseSelect';
@@ -11,6 +12,7 @@ interface AddRecordProps {
 }
 
 const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => {
+  const supabase = createClientComponentClient();
   const [studentId, setStudentId] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -59,32 +61,54 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append('student_id', studentId);
-    formData.append('first_name', firstName);
-    formData.append('last_name', lastName);
-    formData.append('gender', gender);
-    formData.append('department', department);
-    formData.append('course', course);
-    formData.append('year', year);
-    formData.append('date_of_birth', dateOfBirth);
-    formData.append('email', email);
-    formData.append('phone_number', phoneNumber);
-    formData.append('present_address', presentAddress);
-    formData.append('home_address', homeAddress);
-    formData.append('medical_history', medicalHistory);
-    formData.append('emergency_contact_name', emergencyContactName);
-    formData.append('emergency_contact_relation', emergencyContactRelation);
-    formData.append('emergency_contact_phone', emergencyContactPhone);
+    let photoUrl = '';
 
+    // Upload to Supabase if photo selected
     if (studentPhoto) {
-      formData.append('student_photo', studentPhoto);
+      const fileExt = studentPhoto.name.split('.').pop();
+      const fileName = `${studentId}.${fileExt}`;
+      const filePath = `student-photos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('student-photos')
+        .upload(filePath, studentPhoto, {
+          upsert: true,
+          contentType: studentPhoto.type,
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        onAddFailure('upload');
+        return;
+      }
+
+      const { data } = supabase.storage.from('student-photos').getPublicUrl(filePath);
+      photoUrl = data.publicUrl;
     }
 
+    // Send data as JSON
     try {
       const response = await fetch('/api/students', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          student_id: studentId,
+          gender,
+          department,
+          date_of_birth: dateOfBirth,
+          phone_number: phoneNumber,
+          present_address: presentAddress,
+          home_address: homeAddress,
+          year,
+          course,
+          medical_history: medicalHistory,
+          emergency_contact_name: emergencyContactName,
+          emergency_contact_relation: emergencyContactRelation,
+          emergency_contact_phone: emergencyContactPhone,
+          photo_path: photoUrl,
+        }),
       });
 
       if (response.status === 409) {
@@ -94,8 +118,6 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
 
       if (!response.ok) throw new Error('Failed to add record');
 
-      const result = await response.json();
-      console.log(result.message);
       onAddSuccess();
     } catch (error) {
       console.error('Error adding student record:', error);
@@ -105,11 +127,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
 
   return (
     <div className="relative">
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
-        encType="multipart/form-data"
-      >
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block mb-1">Student ID</label>
           <input
@@ -125,9 +143,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
           <input
             type="text"
             value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
             className="border border-gray-300 rounded-md p-2 w-full"
-            required
             readOnly
           />
         </div>
@@ -136,23 +152,21 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
           <input
             type="text"
             value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
             className="border border-gray-300 rounded-md p-2 w-full"
-            required
             readOnly
           />
         </div>
+
         <div>
           <label className="block mb-1">Gender</label>
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4">
             <label>
               <input
                 type="radio"
                 value="Male"
                 checked={gender === 'Male'}
                 onChange={(e) => setGender(e.target.value)}
-                className="mr-2"
-                required
+                className="mr-1"
               />
               Male
             </label>
@@ -162,7 +176,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
                 value="Female"
                 checked={gender === 'Female'}
                 onChange={(e) => setGender(e.target.value)}
-                className="mr-2"
+                className="mr-1"
               />
               Female
             </label>
@@ -194,17 +208,17 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
             required
           />
         </div>
+
         <div>
           <label className="block mb-1">Email</label>
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 w-full"
-            required
             readOnly
+            className="border border-gray-300 rounded-md p-2 w-full"
           />
         </div>
+
         <div>
           <label className="block mb-1">Phone Number</label>
           <input
@@ -214,6 +228,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
             className="border border-gray-300 rounded-md p-2 w-full"
           />
         </div>
+
         <div>
           <label className="block mb-1">Present Address</label>
           <input
@@ -223,6 +238,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
             className="border border-gray-300 rounded-md p-2 w-full"
           />
         </div>
+
         <div>
           <label className="block mb-1">Home Address</label>
           <input
@@ -232,15 +248,17 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
             className="border border-gray-300 rounded-md p-2 w-full"
           />
         </div>
+
         <div>
           <label className="block mb-1">Medical History</label>
           <textarea
             value={medicalHistory}
             onChange={(e) => setMedicalHistory(e.target.value)}
             className="border border-gray-300 rounded-md p-2 w-full"
-            rows={4}
+            rows={3}
           />
         </div>
+
         <div>
           <label className="block mb-1">Emergency Contact Name</label>
           <input
@@ -251,6 +269,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
             required
           />
         </div>
+
         <div>
           <label className="block mb-1">Emergency Contact Relation</label>
           <input
@@ -261,6 +280,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
             required
           />
         </div>
+
         <div>
           <label className="block mb-1">Emergency Contact Phone</label>
           <input
@@ -271,6 +291,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
             required
           />
         </div>
+
         <div>
           <label className="block mb-1">Student Photo</label>
           <input

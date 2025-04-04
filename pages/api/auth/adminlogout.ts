@@ -13,7 +13,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       serialize("adminAuthToken", "", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict", // 🔽 Fixed here
+        sameSite: "strict", 
         path: "/",
         expires: new Date(0),
       })

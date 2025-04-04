@@ -139,12 +139,15 @@ const Record: React.FC = () => {
 
   const closeEditModal = (updatedStudent?: Student) => {
     setIsEditModalOpen(false);
+
     if (updatedStudent) {
+      toast.success("Student record updated successfully!"); // ✅ Toast on update
       setStudentDetails((prev) => ({
         ...prev,
         [updatedStudent.last_name]: updatedStudent,
       }));
     }
+
     setTimeout(fetchStudentData, 100);
   };
 
@@ -207,6 +210,7 @@ const Record: React.FC = () => {
             </button>
           </div>
 
+          {/* Add Modal */}
           {isAddModalOpen && (
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
               <div className="p-6 rounded-lg shadow-lg max-w-5xl h-5/6 overflow-y-auto bg-white relative">
@@ -221,6 +225,7 @@ const Record: React.FC = () => {
             </div>
           )}
 
+          {/* Edit Modal */}
           {isEditModalOpen && activeTab && studentDetails[activeTab] && (
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
               <div className="p-6 rounded-lg shadow-lg max-w-5xl w-full h-5/6 overflow-y-auto bg-white relative">
@@ -238,6 +243,7 @@ const Record: React.FC = () => {
             </div>
           )}
 
+          {/* Search Results */}
           {searchTerm && filteredStudents.length > 0 ? (
             <ul className="bg-white rounded-lg shadow-lg">
               {filteredStudents.map((student) => (
@@ -254,6 +260,7 @@ const Record: React.FC = () => {
             searchTerm && <p className="text-gray-600">No students found...</p>
           )}
 
+          {/* Tabs */}
           <div className="mb-4 flex flex-wrap">
             {activeTabs.map((lastName) => (
               <div key={lastName} className="flex items-center mr-2 mb-2">
@@ -277,6 +284,7 @@ const Record: React.FC = () => {
             ))}
           </div>
 
+          {/* Student Details */}
           {activeTab && studentDetails[activeTab] && (
             <div className="mt-4 bg-white rounded-lg p-4 shadow-lg relative">
               <button
@@ -305,8 +313,7 @@ const Record: React.FC = () => {
                   <p>Present Address: {studentDetails[activeTab]!.present_address}</p>
                   <p>Home Address: {studentDetails[activeTab]!.home_address}</p>
                   <p>
-                    Course - Year: {studentDetails[activeTab]!.course} -{" "}
-                    {studentDetails[activeTab]!.year}
+                    Course - Year: {studentDetails[activeTab]!.course} - {studentDetails[activeTab]!.year}
                   </p>
                   <p>Date of Birth: {formatDate(studentDetails[activeTab]!.date_of_birth)}</p>
                   <p>Email: {studentDetails[activeTab]!.email}</p>

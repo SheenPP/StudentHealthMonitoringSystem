@@ -11,6 +11,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiUser,
+  FiCalendar,
 } from "react-icons/fi";
 import axios from "axios";
 import UserProfile from "./UserProfile";
@@ -73,7 +74,9 @@ const Sidebar: React.FC = () => {
   }
 
   return (
-    <div className={`sidebar bg-gray-50 ${isCollapsed ? "w-24" : "w-64"} p-6 border-r border-gray-200 shadow-md flex flex-col transition-all duration-300 relative`}>
+    <div
+      className={`sidebar bg-gray-50 ${isCollapsed ? "w-24" : "w-64"} p-6 border-r border-gray-200 shadow-md flex flex-col transition-all duration-300 relative`}
+    >
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="py-1 px-1 bg-white border-2 border-black-400 absolute -right-4 top-6 text-gray-600 mb-6 focus:outline-none"
@@ -90,45 +93,85 @@ const Sidebar: React.FC = () => {
           <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
             <Link
               href="/dashboard"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${pathname === "/dashboard" ? "bg-blue-100 text-blue-600" : "hover:bg-gray-200 text-gray-700"}`}
+              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
+                pathname === "/dashboard"
+                  ? "bg-blue-100 text-blue-600"
+                  : "hover:bg-gray-200 text-gray-700"
+              }`}
             >
               <FiGrid size={20} />
               {!isCollapsed && <span className="ml-3">Dashboard</span>}
             </Link>
           </li>
+
           <hr className="border-gray-300 my-4" />
+
           <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
             <Link
               href="/records"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${pathname === "/records" ? "bg-blue-100 text-blue-600" : "hover:bg-gray-200 text-gray-700"}`}
+              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
+                pathname === "/records"
+                  ? "bg-blue-100 text-blue-600"
+                  : "hover:bg-gray-200 text-gray-700"
+              }`}
             >
               <FiFileText size={20} />
               {!isCollapsed && <span className="ml-3">Records</span>}
             </Link>
           </li>
+
           <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
             <Link
               href="/student-profile"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${pathname === "/student-profile" ? "bg-blue-100 text-blue-600" : "hover:bg-gray-200 text-gray-700"}`}
+              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
+                pathname === "/student-profile"
+                  ? "bg-blue-100 text-blue-600"
+                  : "hover:bg-gray-200 text-gray-700"
+              }`}
             >
               <FiUser size={20} />
               {!isCollapsed && <span className="ml-3">Student Profile</span>}
             </Link>
           </li>
+
+          <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
+            <Link
+              href="/appointments"
+              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
+                pathname === "/appointments"
+                  ? "bg-blue-100 text-blue-600"
+                  : "hover:bg-gray-200 text-gray-700"
+              }`}
+            >
+              <FiCalendar size={20} />
+              {!isCollapsed && <span className="ml-3">Appointments</span>}
+            </Link>
+          </li>
+
           <hr className="border-gray-300 my-4" />
+
           <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
             <Link
               href="/logs"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${pathname === "/logs" ? "bg-blue-100 text-blue-600" : "hover:bg-gray-200 text-gray-700"}`}
+              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
+                pathname === "/logs"
+                  ? "bg-blue-100 text-blue-600"
+                  : "hover:bg-gray-200 text-gray-700"
+              }`}
             >
               <FiBookOpen size={20} />
               {!isCollapsed && <span className="ml-3">Logs</span>}
             </Link>
           </li>
+
           <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
             <Link
               href="/archives"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${pathname === "/archives" ? "bg-blue-100 text-blue-600" : "hover:bg-gray-200 text-gray-700"}`}
+              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
+                pathname === "/archives"
+                  ? "bg-blue-100 text-blue-600"
+                  : "hover:bg-gray-200 text-gray-700"
+              }`}
             >
               <FiArchive size={20} />
               {!isCollapsed && <span className="ml-3">Archives</span>}
@@ -141,14 +184,18 @@ const Sidebar: React.FC = () => {
         {user ? (
           <button
             onClick={handleSignOut}
-            className={`w-full flex items-center py-3 text-gray-600 border-t border-gray-200 hover:bg-gray-100 transition-colors rounded-lg ${isCollapsed ? "justify-center" : "justify-start"}`}
+            className={`w-full flex items-center py-3 text-gray-600 border-t border-gray-200 hover:bg-gray-100 transition-colors rounded-lg ${
+              isCollapsed ? "justify-center" : "justify-start"
+            }`}
           >
             {!isCollapsed ? "Sign Out" : <FiChevronRight />}
           </button>
         ) : (
           <Link
             href="/"
-            className={`w-full flex items-center py-3 text-gray-600 border-t border-gray-200 hover:bg-gray-100 transition-colors rounded-lg ${isCollapsed ? "justify-center" : "justify-start"}`}
+            className={`w-full flex items-center py-3 text-gray-600 border-t border-gray-200 hover:bg-gray-100 transition-colors rounded-lg ${
+              isCollapsed ? "justify-center" : "justify-start"
+            }`}
           >
             {!isCollapsed ? "Sign In" : <FiChevronRight />}
           </Link>

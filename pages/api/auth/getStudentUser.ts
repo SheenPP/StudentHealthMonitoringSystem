@@ -6,12 +6,7 @@ import { parse } from "cookie";
 
 const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
 
-// ✅ Define the expected payload structure
-interface JwtPayload {
-  studentId: number;
-}
-
-// ✅ Define the structure of student rows returned from DB
+// Combined structure from studentaccount and students table
 interface StudentRow extends RowDataPacket {
   student_id: number;
   first_name: string;
@@ -20,6 +15,7 @@ interface StudentRow extends RowDataPacket {
   email: string;
   status: string;
   created_at: string;
+  photo_path: string | null;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -35,16 +31,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: "Unauthorized. No token provided." });
     }
 
-    // ✅ Replace `any` with proper JwtPayload type
-    const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload;
+    const decoded: any = jwt.verify(token, SECRET_KEY);
     const studentId = decoded.studentId;
 
     if (!studentId) {
       return res.status(401).json({ error: "Invalid token payload." });
     }
 
+    // Join studentaccount with students to fetch photo_path
     const [students] = await pool.query<StudentRow[]>(
-      "SELECT student_id, first_name, middle_name, last_name, email, status, created_at FROM studentaccount WHERE student_id = ?",
+      `SELECT sa.student_id, sa.first_name, sa.middle_name, sa.last_name, sa.email, sa.status, sa.created_at, s.photo_path
+       FROM studentaccount sa
+       LEFT JOIN students s ON sa.student_id = s.student_id
+       WHERE sa.student_id = ?`,
       [studentId]
     );
 
@@ -62,6 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       email: student.email,
       status: student.status,
       created_at: student.created_at,
+      photo_path: student.photo_path, // ✅ Now correctly pulled from `students` table
     });
   } catch (error) {
     console.error("Error fetching student user:", error);

@@ -1,5 +1,7 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FiEdit, FiX } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -12,6 +14,7 @@ import Image from "next/image";
 import AddRecord from "../components/addrecord";
 import EditRecord from "../components/editRecord";
 import { Trie } from "../components/utils/trie";
+import useAuth from "../hooks/useAuth";
 
 interface Student {
   id: number;
@@ -33,6 +36,9 @@ interface Student {
 }
 
 const Record: React.FC = () => {
+  const { user, authChecked, loading: authLoading } = useAuth();
+  const router = useRouter();
+
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTabs, setActiveTabs] = useState<string[]>([]);
@@ -46,7 +52,9 @@ const Record: React.FC = () => {
 
   const fetchStudentData = async () => {
     try {
-      const response = await fetch("/api/students");
+      const response = await fetch("/api/students", {
+        credentials: "include",
+      });
       const data: Student[] = await response.json();
 
       const newTrie = new Trie<Student>();
@@ -69,8 +77,12 @@ const Record: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchStudentData();
-  }, []);
+    if (authChecked && !user) {
+      router.push("/");
+    } else if (authChecked) {
+      fetchStudentData();
+    }
+  }, [authChecked, user, router]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value.toLowerCase().trim();
@@ -85,17 +97,10 @@ const Record: React.FC = () => {
 
   const handleSelectStudent = (student: Student) => {
     const key = student.last_name;
-    setStudentDetails((prev) => {
-      if (!prev[key]) {
-        prev[key] = student;
-      }
-      return { ...prev };
-    });
-
+    setStudentDetails((prev) => ({ ...prev, [key]: student }));
     if (!activeTabs.includes(key)) {
       setActiveTabs((prevTabs) => [...prevTabs, key]);
     }
-
     setActiveTab(key);
     setFilteredStudents([]);
     setSearchTerm("");
@@ -137,12 +142,16 @@ const Record: React.FC = () => {
 
   const closeEditModal = (updatedStudent?: Student) => {
     setIsEditModalOpen(false);
+
     if (updatedStudent) {
       setStudentDetails((prev) => ({
         ...prev,
         [updatedStudent.last_name]: updatedStudent,
       }));
+
+      toast.success("Record updated successfully!");
     }
+
     setTimeout(fetchStudentData, 100);
   };
 
@@ -161,10 +170,21 @@ const Record: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  const SkeletonLoader = () => (
+    <div className="space-y-4 animate-pulse">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="p-6 bg-white rounded shadow">
+          <div className="h-4 w-1/2 bg-gray-300 rounded mb-2" />
+          <div className="h-4 w-1/3 bg-gray-300 rounded" />
+        </div>
+      ))}
+    </div>
+  );
+
+  if (authLoading || isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="p-6">
+        <SkeletonLoader />
       </div>
     );
   }

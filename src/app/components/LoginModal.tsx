@@ -1,14 +1,14 @@
-// src/app/components/LoginModal.tsx
-
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -35,9 +35,9 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-12 min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-2xl text-gray-800 font-semibold mb-6 text-center">Login</h2>
+    <div className="flex flex-col items-center justify-center p-12">
+      <div className="bg-white p-8 rounded-lg shadow-lg w-96">
+      <h2 className="text-2xl text-gray-800 font-semibold mb-6 text-center">Login</h2>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
@@ -53,18 +53,27 @@ const Login = () => {
               className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
             />
           </div>
-          <div>
+
+          <div className="relative">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-2 p-2 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+              className="mt-2 p-2 pr-10 w-full border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute top-[42px] right-3 text-gray-500"
+              tabIndex={-1}
+            >
+              {showPassword ? <FiEyeOff /> : <FiEye />}
+            </button>
           </div>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -77,21 +86,6 @@ const Login = () => {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <p
-            className="text-sm text-gray-600 cursor-pointer hover:underline"
-            onClick={() => handleRoleRedirect("admin")}
-          >
-            Admin
-          </p>
-          <p
-            className="text-sm text-gray-600 cursor-pointer hover:underline mt-2"
-            onClick={() => handleRoleRedirect("student")}
-          >
-            Student
-          </p>
-        </div>
       </div>
     </div>
   );

@@ -14,7 +14,7 @@ type Archive = {
 };
 
 export default function Archives() {
-  const { authChecked, loading: authLoading } = useAdminAuth();
+  const { admin, authChecked, loading: authLoading } = useAdminAuth();
   const [archives, setArchives] = useState<Archive[]>([]);
   const [error, setError] = useState("");
   const [loadingArchives, setLoadingArchives] = useState(true);
@@ -48,7 +48,11 @@ export default function Archives() {
     try {
       await axios.post(
         "/api/recycle-bin",
-        { action: "restore", file_id: id },
+        {
+          action: "restore",
+          file_id: id,
+          username: admin?.username || "admin_user", // ✅ Include username
+        },
         { withCredentials: true }
       );
       alert(`"${file_name}" has been restored successfully!`);
@@ -69,7 +73,11 @@ export default function Archives() {
     try {
       await axios.post(
         "/api/recycle-bin",
-        { action: "delete", file_id: id },
+        {
+          action: "delete",
+          file_id: id,
+          username: admin?.username || "admin_user", // ✅ Include username
+        },
         { withCredentials: true }
       );
       alert(`"${file_name}" has been permanently deleted.`);

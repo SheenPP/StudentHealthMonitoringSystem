@@ -7,7 +7,7 @@ import Link from "next/link";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 
 const MAX_ATTEMPTS = 5;
-const COOLDOWN_TIME = 3 * 60 * 1000;
+const COOLDOWN_TIME = 3 * 60 * 1000; // 3 minutes
 
 const StudentLogin = () => {
   const [identifier, setIdentifier] = useState("");
@@ -23,11 +23,12 @@ const StudentLogin = () => {
     const lastAttempt = localStorage.getItem("lastLoginAttempt");
     if (lastAttempt && Date.now() - parseInt(lastAttempt) < COOLDOWN_TIME) {
       setIsLocked(true);
+      const timeLeft = COOLDOWN_TIME - (Date.now() - parseInt(lastAttempt));
       setTimeout(() => {
         setIsLocked(false);
         setAttempts(0);
         localStorage.removeItem("lastLoginAttempt");
-      }, COOLDOWN_TIME - (Date.now() - parseInt(lastAttempt)));
+      }, timeLeft);
     }
   }, []);
 
@@ -110,8 +111,9 @@ const StudentLogin = () => {
             />
             <button
               type="button"
-              className="absolute top-9 right-3 text-gray-600 hover:text-gray-900"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute top-9 right-3 text-gray-600 hover:text-gray-900 focus:outline-none"
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
             </button>
@@ -119,7 +121,7 @@ const StudentLogin = () => {
 
           {attempts > 0 && !isLocked && (
             <p className="text-yellow-500 text-sm text-center">
-              Warning: {MAX_ATTEMPTS - attempts} attempts left before lockout.
+              Warning: {MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts !== 1 && "s"} left before lockout.
             </p>
           )}
 

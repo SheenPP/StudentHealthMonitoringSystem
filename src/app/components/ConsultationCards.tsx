@@ -158,26 +158,18 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
     }
   };
 
-  const handleDownload = async (filePath: string) => {
-    if (!selectedConsultation) return;
-
-    try {
-      const res = await fetch(
-        `/api/download?consultation_type=${encodeURIComponent(
-          selectedConsultation.name
-        )}&filename=${encodeURIComponent(filePath)}`
-      );
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filePath.split("/").pop() || "download";
-      a.click();
-      a.remove();
-    } catch {
-      setMessage({ type: "error", text: "Failed to download file." });
-    }
+  const handleDownload = (filePath: string) => {
+    if (!filePath) return;
+  
+    const a = document.createElement("a");
+    a.href = filePath;
+    a.target = "_blank"; // Optional: open in new tab
+    a.download = filePath.split("/").pop() || "download";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
+  
 
   useEffect(() => {
     if (isOpen && selectedConsultation) {

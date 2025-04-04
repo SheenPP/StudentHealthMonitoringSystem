@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import Sidebar from "../../components/AdminSidebar";
 import Header from "../../components/Header";
-import Image from "next/image";
+import SupabaseImage from "../../components/SupabaseImage";
 import useAdminAuth from "../../hooks/useAdminAuth";
 
 type ImageData = {
@@ -156,16 +156,17 @@ const Logs = () => {
                 {showSkeleton ? (
                   Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
                 ) : currentImages.length > 0 ? (
-                  currentImages.map((image) => (
+                  currentImages.map((image, idx) => (
                     <tr key={image.id} className="border-t">
                       <td className="p-3">
-                        <Image
+                        <SupabaseImage
                           src={image.image_url}
                           alt={image.filename}
                           width={64}
                           height={64}
                           className="w-16 h-16 object-cover rounded-md cursor-pointer"
                           onClick={() => setModalImage(image)}
+                          priority={idx === 0}
                         />
                       </td>
                       <td className="p-3">{image.filename}</td>
@@ -228,12 +229,13 @@ const Logs = () => {
                 >
                   &times;
                 </button>
-                <Image
+                <SupabaseImage
                   src={modalImage.image_url}
                   alt={modalImage.filename}
                   width={800}
                   height={600}
                   className="w-full h-auto object-contain rounded"
+                  priority
                 />
               </div>
             </div>
