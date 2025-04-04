@@ -13,10 +13,6 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleRoleRedirect = (role: "admin" | "student") => {
-    router.push(`/${role}-login`);
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -37,7 +33,7 @@ const Login = () => {
   return (
     <div className="flex flex-col items-center justify-center p-12">
       <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-      <h2 className="text-2xl text-gray-800 font-semibold mb-6 text-center">Login</h2>
+        <h2 className="text-2xl text-gray-800 font-semibold mb-6 text-center">Login</h2>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
