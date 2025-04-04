@@ -14,7 +14,7 @@ type Archive = {
 };
 
 export default function Archives() {
-  const { admin, authChecked, loading: authLoading } = useAdminAuth();
+  const { authChecked, loading: authLoading } = useAdminAuth(); // ✅ Removed unused admin
   const [archives, setArchives] = useState<Archive[]>([]);
   const [error, setError] = useState("");
   const [loadingArchives, setLoadingArchives] = useState(true);
@@ -51,7 +51,7 @@ export default function Archives() {
         {
           action: "restore",
           file_id: id,
-          username: admin?.username || "admin_user", // ✅ Include username
+          username: "admin_user", // ✅ Hardcoded fallback username
         },
         { withCredentials: true }
       );
@@ -76,7 +76,7 @@ export default function Archives() {
         {
           action: "delete",
           file_id: id,
-          username: admin?.username || "admin_user", // ✅ Include username
+          username: "admin_user", // ✅ Hardcoded fallback username
         },
         { withCredentials: true }
       );
@@ -133,9 +133,7 @@ export default function Archives() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
                 {showSkeleton ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <SkeletonTableRow key={i} />
-                  ))
+                  Array.from({ length: 5 }).map((_, i) => <SkeletonTableRow key={i} />)
                 ) : archives.length > 0 ? (
                   archives.map((archive) => (
                     <tr key={archive.id} className="hover:bg-blue-50 transition">
