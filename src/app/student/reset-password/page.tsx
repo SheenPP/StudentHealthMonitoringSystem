@@ -11,7 +11,7 @@ const passwordRegex =
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams?.get("token");
+  const token = searchParams?.get("token") ?? null; // Ensure null if not present
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,6 +38,12 @@ export default function ResetPasswordPage() {
     }
 
     try {
+      if (!token) {
+        setErrorMessage("Token is missing.");
+        setStatus("error");
+        return;
+      }
+
       await axios.post("/api/auth/resetPassword", { token, newPassword });
       setStatus("success");
       setTimeout(() => router.push("/student/login"), 2000);
