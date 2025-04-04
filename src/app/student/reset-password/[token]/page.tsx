@@ -1,17 +1,16 @@
 "use client";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import axios from "axios";
 import { FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 
-// ✅ Strong password pattern
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams?.get("token") ?? null; // Ensure null if not present
+  const { token } = useParams() as { token: string };
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,12 +37,6 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      if (!token) {
-        setErrorMessage("Token is missing.");
-        setStatus("error");
-        return;
-      }
-
       await axios.post("/api/auth/resetPassword", { token, newPassword });
       setStatus("success");
       setTimeout(() => router.push("/student/login"), 2000);
