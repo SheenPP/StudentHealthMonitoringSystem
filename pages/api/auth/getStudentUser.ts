@@ -6,7 +6,6 @@ import { parse } from "cookie";
 
 const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
 
-// Combined structure from studentaccount and students table
 interface StudentRow extends RowDataPacket {
   student_id: number;
   first_name: string;
@@ -16,6 +15,13 @@ interface StudentRow extends RowDataPacket {
   status: string;
   created_at: string;
   photo_path: string | null;
+}
+
+// ✅ Define JWT payload structure
+interface JwtPayload {
+  studentId: number;
+  iat?: number;
+  exp?: number;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -31,14 +37,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: "Unauthorized. No token provided." });
     }
 
-    const decoded: any = jwt.verify(token, SECRET_KEY);
+    const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload;
+
     const studentId = decoded.studentId;
 
     if (!studentId) {
       return res.status(401).json({ error: "Invalid token payload." });
     }
 
-    // Join studentaccount with students to fetch photo_path
     const [students] = await pool.query<StudentRow[]>(
       `SELECT sa.student_id, sa.first_name, sa.middle_name, sa.last_name, sa.email, sa.status, sa.created_at, s.photo_path
        FROM studentaccount sa
@@ -61,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       email: student.email,
       status: student.status,
       created_at: student.created_at,
-      photo_path: student.photo_path, // ✅ Now correctly pulled from `students` table
+      photo_path: student.photo_path,
     });
   } catch (error) {
     console.error("Error fetching student user:", error);

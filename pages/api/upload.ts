@@ -10,13 +10,22 @@ import type { RowDataPacket, OkPacket } from 'mysql2';
 export const config = { api: { bodyParser: false } };
 const SECRET_KEY = process.env.JWT_SECRET || 'your_secret_key';
 
+// ✅ Strongly typed JWT payload
+interface JwtPayload {
+  userId?: number;
+  adminId?: number;
+  role: 'admin' | 'user';
+  iat?: number;
+  exp?: number;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const cookies = parseCookies({ req });
     const token = cookies.authToken || cookies.adminAuthToken;
     if (!token) return res.status(401).json({ error: 'Authorization token is required' });
 
-    const decoded = jwt.verify(token, SECRET_KEY) as any;
+    const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload;
     const id = decoded.userId || decoded.adminId;
     const role = decoded.role;
 
@@ -38,7 +47,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const student_id = fields.student_id?.toString() || 'unknown';
       const consultation_type = fields.consultation_type?.toString() || 'default';
-      const file = Array.isArray(files.file) ? files.file[0] : (files.file as FormidableFile);
+
+      // ✅ Safely check and cast file
+      const fileField = files.file;
+      const file = Array.isArray(fileField)
+        ? fileField[0]
+        : fileField
+        ? (fileField as FormidableFile)
+        : undefined;
 
       console.log('📄 Consultation Type:', consultation_type);
       console.log('📄 Original File Name:', file?.originalFilename);

@@ -6,6 +6,14 @@ import type { RowDataPacket } from 'mysql2';
 
 const SECRET_KEY = process.env.JWT_SECRET || 'your_secret_key';
 
+// ✅ Define the expected JWT payload structure
+interface JwtPayload {
+  userId: number;
+  role: string;
+  iat?: number;
+  exp?: number;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -19,15 +27,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Not authenticated - Missing token' });
     }
 
-    let decoded: any;
+    let decoded: JwtPayload;
+
     try {
-      decoded = jwt.verify(token, SECRET_KEY);
-    } catch (err) {
+      decoded = jwt.verify(token, SECRET_KEY) as JwtPayload;
+    } catch {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    const userId = decoded.userId;
-    const role = decoded.role;
+    const { userId, role } = decoded;
 
     if (!userId || role !== 'user') {
       return res.status(403).json({ error: 'Forbidden - Not a valid user' });

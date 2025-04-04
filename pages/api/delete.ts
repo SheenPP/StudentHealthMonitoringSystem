@@ -13,6 +13,15 @@ export const config = {
   },
 };
 
+// ✅ JWT payload interface
+interface JwtPayload {
+  userId?: number;
+  adminId?: number;
+  role: 'user' | 'admin';
+  iat?: number;
+  exp?: number;
+}
+
 // ✅ Utility to get timestamp in Asia/Manila timezone in MySQL format
 function getAsiaManilaTimestamp(): string {
   const date = new Date();
@@ -50,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Authorization token is required' });
     }
 
-    const decoded = jwt.verify(token, SECRET_KEY) as any;
+    const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload;
     const userId = decoded.userId || decoded.adminId;
     const role = decoded.role;
 
@@ -101,11 +110,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const file = fileResult[0];
-
-      // ✅ Correct timestamp in Asia/Manila timezone
       const deletedAt = getAsiaManilaTimestamp();
 
-      // ✅ Update file record
       await pool.query<OkPacket>(
         `UPDATE files
          SET deleted_by = ?, deleted_at = ?, recycle_bin = 1
@@ -113,14 +119,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [username, deletedAt, file_id]
       );
 
-      // ✅ Insert into file history
       await pool.query<OkPacket>(
         `INSERT INTO file_history (file_id, student_id, action, user, timestamp, file_name, consultation_type)
          VALUES (?, ?, 'Moved to Recycle Bin', ?, ?, ?, ?)`,
         [file_id, student_id, username, deletedAt, file.file_name, consultation_type]
       );
 
-      // ✅ Insert into recycle_bin table
       await pool.query<OkPacket>(
         `INSERT INTO recycle_bin (file_id, file_name, deleted_by, deleted_at)
          VALUES (?, ?, ?, ?)`,

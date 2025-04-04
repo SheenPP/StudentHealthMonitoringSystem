@@ -1,17 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 
-// ✅ Regex for validation
+// ✅ Strong password pattern
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const token = searchParams?.get("token");
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,7 +20,7 @@ export default function ResetPasswordPage() {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
@@ -41,10 +41,13 @@ export default function ResetPasswordPage() {
       await axios.post("/api/auth/resetPassword", { token, newPassword });
       setStatus("success");
       setTimeout(() => router.push("/student/login"), 2000);
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
+      const axiosError = error as unknown as {
+        response?: { data?: { error?: string } };
+      };
+      setErrorMessage(axiosError?.response?.data?.error || "Reset failed.");
       setStatus("error");
-      setErrorMessage(error.response?.data?.error || "Reset failed.");
     }
   };
 

@@ -25,7 +25,7 @@ export default function useAuth() {
           withCredentials: true,
         });
         setUser(res.data.user);
-      } catch (err) {
+      } catch {
         setUser(null);
       } finally {
         setLoading(false);

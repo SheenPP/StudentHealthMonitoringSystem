@@ -1,19 +1,41 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useOptions } from '../options/useOptions';
 import DepartmentSelect from '../options/DepartmentSelect';
 import CourseSelect from '../options/CourseSelect';
 import YearSelect from '../options/YearSelect';
+import Image from 'next/image';
+
+export interface Student {
+  id: number;
+  student_id: string;
+  first_name: string;
+  last_name: string;
+  present_address: string;
+  home_address: string;
+  date_of_birth: string;
+  email: string;
+  phone_number: string;
+  medical_history: string;
+  emergency_contact_name: string;
+  emergency_contact_relation: string;
+  emergency_contact_phone: string;
+  course: string;
+  year: string;
+  photo_path: string;
+  gender: string;
+  department: string;
+}
 
 interface EditRecordProps {
   studentId: string;
-  onClose: (updatedStudent?: any) => void;
+  onClose: (updatedStudent?: Student) => void;
 }
 
 const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
   const supabase = createClientComponentClient();
-  const [studentData, setStudentData] = useState<any>(null);
+  const [studentData, setStudentData] = useState<Student | null>(null);
   const [newPhoto, setNewPhoto] = useState<File | null>(null);
   const { departments, coursesByDepartment, years } = useOptions();
   const [loading, setLoading] = useState(true);
@@ -23,6 +45,7 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
       try {
         const res = await fetch(`/api/students?id=${studentId}`);
         const data = await res.json();
+
         setStudentData({
           ...data,
           date_of_birth: data.date_of_birth?.split('T')[0] || '',
@@ -38,6 +61,8 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!studentData) return;
+
     let photoUrl = studentData.photo_path;
 
     if (newPhoto) {
@@ -61,9 +86,7 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
 
     const response = await fetch(`/api/students?id=${studentId}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...studentData, photo_path: photoUrl }),
     });
 
@@ -72,12 +95,12 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
       alert(`Update failed: ${data.message}`);
     } else {
       const updated = { ...studentData, photo_path: photoUrl };
-      onClose(updated); // ✅ this triggers toast from parent
+      onClose(updated);
     }
   };
 
-  const handleChange = (field: string, value: any) => {
-    setStudentData((prev: any) => ({ ...prev, [field]: value }));
+  const handleChange = <K extends keyof Student>(field: K, value: Student[K]) => {
+    setStudentData((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
   if (loading || !studentData) {
@@ -91,6 +114,7 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
           <label className="block mb-1">Student ID</label>
           <input type="text" value={studentData.student_id} className="border p-2 w-full" disabled />
         </div>
+
         <div>
           <label className="block mb-1">First Name</label>
           <input
@@ -100,6 +124,7 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
             className="border p-2 w-full"
           />
         </div>
+
         <div>
           <label className="block mb-1">Last Name</label>
           <input
@@ -119,7 +144,7 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
                   type="radio"
                   value={g}
                   checked={studentData.gender === g}
-                  onChange={(e) => handleChange('gender', e.target.value)}
+                  onChange={(e) => handleChange('gender', e.target.value as Student['gender'])}
                   className="mr-1"
                 />
                 {g}
@@ -133,13 +158,19 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
           setDepartment={(val) => handleChange('department', val)}
           departments={departments}
         />
+
         <CourseSelect
           department={studentData.department}
           course={studentData.course}
           setCourse={(val) => handleChange('course', val)}
           coursesByDepartment={coursesByDepartment}
         />
-        <YearSelect year={studentData.year} setYear={(val) => handleChange('year', val)} years={years} />
+
+        <YearSelect
+          year={studentData.year}
+          setYear={(val) => handleChange('year', val)}
+          years={years}
+        />
 
         <div>
           <label className="block mb-1">Date of Birth</label>
@@ -175,6 +206,7 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
             className="border p-2 w-full"
           />
         </div>
+
         <div>
           <label className="block mb-1">Home Address</label>
           <input
@@ -203,6 +235,7 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
             className="border p-2 w-full"
           />
         </div>
+
         <div>
           <label className="block mb-1">Emergency Contact Relation</label>
           <input
@@ -212,6 +245,7 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
             className="border p-2 w-full"
           />
         </div>
+
         <div>
           <label className="block mb-1">Emergency Contact Phone</label>
           <input
@@ -225,7 +259,13 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
         <div>
           <label className="block mb-1">Student Photo</label>
           {studentData.photo_path && (
-            <img src={studentData.photo_path} alt="Profile" className="w-24 h-24 mb-2 rounded object-cover" />
+            <Image
+              src={studentData.photo_path}
+              alt="Profile"
+              width={96}
+              height={96}
+              className="mb-2 rounded object-cover"
+            />
           )}
           <input
             type="file"
