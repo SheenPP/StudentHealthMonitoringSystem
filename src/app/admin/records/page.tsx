@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FileList from "../../components/FileList";
 import Sidebar from "../../components/AdminSidebar";
@@ -102,4 +102,10 @@ const Records = () => {
   );
 };
 
-export default Records;
+const RecordsPage = () => (
+  <Suspense fallback={<SkeletonLayout />}>
+    <Records />
+  </Suspense>
+);
+
+export default RecordsPage;

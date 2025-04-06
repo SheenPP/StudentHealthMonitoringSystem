@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useAuth from "../hooks/useAuth";
 import FileList from "../components/FileList";
@@ -29,13 +29,12 @@ const Records = () => {
     if (consultationType) params.set("consultationType", consultationType);
     params.set("page", page.toString());
 
-    router.push(`/records?${params.toString()}`);
-  }, [searchQuery, consultationType, page, router]); // Include dependencies
+    router.push(`/admin/records?${params.toString()}`);
+  }, [searchQuery, consultationType, page, router]);
 
   useEffect(() => {
-    // Reflect changes in the URL on page/filter change
     updateQueryParams();
-  }, [updateQueryParams]); // Added updateQueryParams here
+  }, [updateQueryParams]);
 
   if (!authChecked || loading) {
     return (
@@ -100,4 +99,10 @@ const Records = () => {
   );
 };
 
-export default Records;
+const RecordsPage = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <Records />
+  </Suspense>
+);
+
+export default RecordsPage;
