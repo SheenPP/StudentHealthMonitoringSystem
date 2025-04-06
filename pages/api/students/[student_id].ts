@@ -31,9 +31,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     case 'GET':
       try {
         const [results] = await db.query<StudentRow[]>(
-          'SELECT * FROM students WHERE student_id = ?',
-          [studentId]
+          `SELECT * FROM students WHERE student_id = ?
+           UNION
+           SELECT * FROM studentaccount WHERE student_id = ?`,
+          [studentId, studentId]
         );
+        
 
         if (results.length === 0) {
           return res.status(404).json({ message: 'Student not found.' });

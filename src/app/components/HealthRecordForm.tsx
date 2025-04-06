@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { useOptions } from "../options/useOptions";
 import DepartmentSelect from "../options/DepartmentSelect";
 import CourseSelect from "../options/CourseSelect";
@@ -8,9 +9,10 @@ import YearSelect from "../options/YearSelect";
 
 interface HealthRecordFormProps {
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-const HealthRecordForm: React.FC<HealthRecordFormProps> = ({ onClose }) => {
+const HealthRecordForm: React.FC<HealthRecordFormProps> = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     student_id: "",
     name: "",
@@ -47,6 +49,39 @@ const HealthRecordForm: React.FC<HealthRecordFormProps> = ({ onClose }) => {
     }));
   };
 
+  const fetchStudentInfo = async (studentId: string) => {
+    try {
+      const res = await fetch(`/api/students?id=${studentId}`);
+      if (!res.ok) throw new Error("Student not found");
+      const data = await res.json();
+
+      setFormData((prev) => ({
+        ...prev,
+        name: `${data.first_name} ${data.last_name}`,
+        department: data.department,
+        course: data.course,
+        year: data.year,
+        gender: data.gender,
+        home_address: data.home_address,
+        present_address: data.present_address,
+        contact_number: data.phone_number,
+        emergency_contact_name: data.emergency_contact_name,
+        emergency_contact_relation: data.emergency_contact_relation,
+        emergency_contact_phone: data.emergency_contact_phone,
+      }));
+
+      toast.success("Student info auto-filled");
+    } catch (err) {
+      toast.error("Student not found or error fetching data");
+    }
+  };
+
+  const handleStudentIdBlur = () => {
+    if (formData.student_id.trim()) {
+      fetchStudentInfo(formData.student_id.trim());
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -60,15 +95,18 @@ const HealthRecordForm: React.FC<HealthRecordFormProps> = ({ onClose }) => {
       });
 
       if (response.ok) {
-        alert("✅ Health record added successfully!");
-        onClose();
+        toast.success("Health record added successfully!");
+        if (onSuccess) onSuccess(); // trigger refresh
+        onClose(); // close modal
       } else {
         const errorData = await response.json();
-        setError(errorData.message || "❌ Failed to add health record.");
+        setError(errorData.message || "Failed to add health record.");
+        toast.error(errorData.message || "Failed to add health record.");
       }
     } catch (error) {
       console.error("Submission error:", error);
-      setError("⚠️ Something went wrong. Please try again.");
+      setError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -91,6 +129,7 @@ const HealthRecordForm: React.FC<HealthRecordFormProps> = ({ onClose }) => {
               name="student_id"
               value={formData.student_id}
               onChange={handleChange}
+              onBlur={handleStudentIdBlur}
               className="w-full mt-1 p-2 border rounded-md"
               required
             />

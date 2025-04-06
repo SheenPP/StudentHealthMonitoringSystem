@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
 import { FiLock, FiEye, FiEyeOff } from "react-icons/fi";
+import { ImSpinner2 } from "react-icons/im";
 
 const passwordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -16,11 +16,13 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setStatus("idle");
+    setErrorMessage("");
 
     if (newPassword !== confirmPassword) {
       setErrorMessage("Passwords do not match.");
@@ -37,30 +39,30 @@ export default function ResetPasswordPage() {
     }
 
     try {
+      setStatus("loading");
       await axios.post("/api/auth/resetPassword", { token, newPassword });
       setStatus("success");
       setTimeout(() => router.push("/student/login"), 2000);
-    } catch (error) {
-      console.error(error);
-      const axiosError = error as unknown as {
-        response?: { data?: { error?: string } };
-      };
-      setErrorMessage(axiosError?.response?.data?.error || "Reset failed.");
+    } catch (error: any) {
+      setErrorMessage(error?.response?.data?.error || "Reset failed.");
       setStatus("error");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 px-4">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md animate-fade-in">
-        <div className="flex items-center justify-center mb-4">
-          <FiLock className="text-blue-600 text-3xl mr-2" />
-          <h2 className="text-2xl font-semibold text-gray-800">Reset Password</h2>
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md transition-all animate-fade-in">
+        <div className="flex items-center justify-center mb-6">
+          <FiLock className="text-blue-600 text-4xl mr-2" />
+          <h2 className="text-2xl font-bold text-gray-800">Reset Password</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* New Password */}
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              New Password
+            </label>
             <input
               type={showNewPassword ? "text" : "password"}
               className="w-full border border-gray-300 px-4 py-2 pr-10 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -78,8 +80,11 @@ export default function ResetPasswordPage() {
             </button>
           </div>
 
+          {/* Confirm Password */}
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Confirm Password
+            </label>
             <input
               type={showConfirmPassword ? "text" : "password"}
               className="w-full border border-gray-300 px-4 py-2 pr-10 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -97,13 +102,24 @@ export default function ResetPasswordPage() {
             </button>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition"
+            className={`w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ${
+              status === "loading" ? "cursor-not-allowed opacity-70" : ""
+            }`}
+            disabled={status === "loading"}
           >
-            Reset Password
+            {status === "loading" ? (
+              <>
+                <ImSpinner2 className="animate-spin mr-2" /> Resetting...
+              </>
+            ) : (
+              "Reset Password"
+            )}
           </button>
 
+          {/* Feedback */}
           {status === "success" && (
             <p className="mt-4 text-green-600 text-sm text-center animate-fade-in">
               ✅ Password reset successful! Redirecting...

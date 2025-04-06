@@ -24,13 +24,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ user, isCollapsed, error }) =
         <div className="text-red-500">{error}</div>
       ) : user ? (
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
-          {/* <Image
+          <Image
             src={user.profile_picture || `https://i.pravatar.cc/150?u=${user.username}`}
             alt="User Avatar"
             width={40}
             height={40}
             className="rounded-full"
-          /> */}
+          />
           {!isCollapsed && (
             <div className="ml-2">
               <div className="font-semibold">{`${user.lastname}, ${user.firstname}`}</div>

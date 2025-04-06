@@ -2,12 +2,12 @@ import { NextApiRequest, NextApiResponse } from "next";
 import pool from "../../lib/db";
 import { RowDataPacket } from "mysql2";
 
-// Define the shape of a file row
 interface FileRow extends RowDataPacket {
   id: number;
   file_name: string;
   file_path: string;
-  upload_date: string; // or `Date` if you prefer
+  upload_date: string;
+  consultation_type?: string; // Include if applicable
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -16,24 +16,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    console.log("✅ Fetching all files...");
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+    const consultationType = req.query.consultationType as string;
+    const search = req.query.search as string;
 
+    let whereClauses: string[] = ["(deleted_at IS NULL OR recycle_bin = 0)"];
+    let queryParams: any[] = [];
+
+    // Add consultation type filter if present
+    if (consultationType) {
+      whereClauses.push("consultation_type = ?");
+      queryParams.push(consultationType);
+    }
+
+    // Add search filter for file name or ID
+    if (search) {
+      whereClauses.push("(file_name LIKE ? OR id LIKE ?)");
+      queryParams.push(`%${search}%`, `%${search}%`);
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+    // Get total matching records
+    const [countRows] = await pool.query<RowDataPacket[]>(
+      `SELECT COUNT(*) as total FROM files ${whereSql}`,
+      queryParams
+    );
+    const totalFiles = countRows[0].total;
+    const totalPages = Math.ceil(totalFiles / limit);
+
+    // Get paginated, filtered results
     const [rows] = await pool.query<FileRow[]>(
-      "SELECT id, file_name, file_path, upload_date FROM files WHERE deleted_at IS NULL OR recycle_bin = 0"
+      `SELECT id, file_name, file_path, upload_date, consultation_type 
+       FROM files 
+       ${whereSql}
+       ORDER BY upload_date DESC 
+       LIMIT ? OFFSET ?`,
+      [...queryParams, limit, offset]
     );
 
-    console.log("✅ Database query executed. Rows returned:", rows);
-
-    if (!rows || rows.length === 0) {
-      return res.status(404).json({ error: "No files found" });
-    }
-
-    return res.status(200).json({ files: rows });
+    return res.status(200).json({
+      files: rows,
+      totalFiles,
+      totalPages,
+      currentPage: page,
+    });
   } catch (error: unknown) {
     console.error("❌ Error fetching files:", error);
-    if (error instanceof Error) {
-      return res.status(500).json({ error: error.message });
-    }
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : "Internal Server Error",
+    });
   }
 }

@@ -58,11 +58,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     } = req.body;
 
     try {
-      // ✅ Type-safe student check
       const [studentCheck] = await pool.query<StudentRow[]>(
-        'SELECT * FROM students WHERE student_id = ?',
-        [student_id]
+        `SELECT student_id FROM students WHERE student_id = ?
+         UNION
+         SELECT student_id FROM studentaccount WHERE student_id = ?`,
+        [student_id, student_id]
       );
+      
 
       if (studentCheck.length === 0) {
         return res.status(400).json({ message: 'Invalid student ID.' });
