@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useAuth from "../hooks/useAuth";
 import FileList from "../components/FileList";
@@ -22,7 +22,7 @@ const Records = () => {
     }
   }, [authChecked, user, router]);
 
-  const updateQueryParams = () => {
+  const updateQueryParams = useCallback(() => {
     const params = new URLSearchParams();
 
     if (searchQuery) params.set("search", searchQuery);
@@ -30,12 +30,12 @@ const Records = () => {
     params.set("page", page.toString());
 
     router.push(`/records?${params.toString()}`);
-  };
+  }, [searchQuery, consultationType, page, router]); // Include dependencies
 
   useEffect(() => {
     // Reflect changes in the URL on page/filter change
     updateQueryParams();
-  }, [searchQuery, consultationType, page]);
+  }, [updateQueryParams]); // Added updateQueryParams here
 
   if (!authChecked || loading) {
     return (
@@ -69,23 +69,23 @@ const Records = () => {
               className="border border-gray-300 rounded px-4 py-2 w-full sm:w-1/3"
             />
             <select
-  value={consultationType}
-  onChange={(e) => {
-    setPage(1);
-    setConsultationType(e.target.value);
-  }}
-  className="border border-gray-300 rounded px-4 py-2 w-full sm:w-1/4"
->
-  <option value="">All Types</option>
-  <option value="Medical Consultation">Medical Consultation</option>
-  <option value="Medical Referral">Medical Referral</option>
-  <option value="Pre-Enrollment">Pre-Enrollment</option>
-  <option value="Dental Consultation">Dental Consultation</option>
-  <option value="Waivers">Waivers</option>
-  <option value="Guidance Referral">Guidance Referral</option>
-  <option value="Pre-Employment">Pre-Employment</option>
-  <option value="Laboratory Req">Laboratory Req</option>
-</select>
+              value={consultationType}
+              onChange={(e) => {
+                setPage(1);
+                setConsultationType(e.target.value);
+              }}
+              className="border border-gray-300 rounded px-4 py-2 w-full sm:w-1/4"
+            >
+              <option value="">All Types</option>
+              <option value="Medical Consultation">Medical Consultation</option>
+              <option value="Medical Referral">Medical Referral</option>
+              <option value="Pre-Enrollment">Pre-Enrollment</option>
+              <option value="Dental Consultation">Dental Consultation</option>
+              <option value="Waivers">Waivers</option>
+              <option value="Guidance Referral">Guidance Referral</option>
+              <option value="Pre-Employment">Pre-Employment</option>
+              <option value="Laboratory Req">Laboratory Req</option>
+            </select>
           </div>
 
           <FileList

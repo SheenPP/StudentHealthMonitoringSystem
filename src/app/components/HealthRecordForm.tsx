@@ -71,7 +71,7 @@ const HealthRecordForm: React.FC<HealthRecordFormProps> = ({ onClose, onSuccess 
       }));
 
       toast.success("Student info auto-filled");
-    } catch (err) {
+    } catch {
       toast.error("Student not found or error fetching data");
     }
   };

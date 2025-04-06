@@ -7,7 +7,7 @@ interface FileRow extends RowDataPacket {
   file_name: string;
   file_path: string;
   upload_date: string;
-  consultation_type?: string; // Include if applicable
+  consultation_type?: string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -22,16 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const consultationType = req.query.consultationType as string;
     const search = req.query.search as string;
 
-    let whereClauses: string[] = ["(deleted_at IS NULL OR recycle_bin = 0)"];
-    let queryParams: any[] = [];
+    const whereClauses: string[] = ["(deleted_at IS NULL OR recycle_bin = 0)"];
+    const queryParams: (string | number)[] = [];
 
-    // Add consultation type filter if present
     if (consultationType) {
       whereClauses.push("consultation_type = ?");
       queryParams.push(consultationType);
     }
 
-    // Add search filter for file name or ID
     if (search) {
       whereClauses.push("(file_name LIKE ? OR id LIKE ?)");
       queryParams.push(`%${search}%`, `%${search}%`);
@@ -39,7 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-    // Get total matching records
     const [countRows] = await pool.query<RowDataPacket[]>(
       `SELECT COUNT(*) as total FROM files ${whereSql}`,
       queryParams
@@ -47,7 +44,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const totalFiles = countRows[0].total;
     const totalPages = Math.ceil(totalFiles / limit);
 
-    // Get paginated, filtered results
     const [rows] = await pool.query<FileRow[]>(
       `SELECT id, file_name, file_path, upload_date, consultation_type 
        FROM files 

@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
@@ -43,8 +44,13 @@ export default function ResetPasswordPage() {
       await axios.post("/api/auth/resetPassword", { token, newPassword });
       setStatus("success");
       setTimeout(() => router.push("/student/login"), 2000);
-    } catch (error: any) {
-      setErrorMessage(error?.response?.data?.error || "Reset failed.");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        // Check if the error is an Axios error
+        setErrorMessage(error.response?.data?.error || "Reset failed.");
+      } else {
+        setErrorMessage("Reset failed.");
+      }
       setStatus("error");
     }
   };

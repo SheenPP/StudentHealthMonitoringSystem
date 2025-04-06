@@ -41,7 +41,7 @@ const Records = () => {
     params.set("page", page.toString());
 
     router.push(`/admin/records?${params.toString()}`);
-  }, [searchQuery, consultationType, page]);
+  }, [searchQuery, consultationType, page, router]); // Added router here
 
   if (!authChecked || authLoading) {
     return <SkeletonLayout />;
