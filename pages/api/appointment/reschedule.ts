@@ -2,6 +2,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import db from "../../../lib/db";
 import nodemailer from "nodemailer";
 
+interface StudentInfo {
+  email: string;
+  first_name: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
@@ -23,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [id]
     );
 
-    const student = Array.isArray(rows) ? (rows[0] as any) : null;
+    const student = Array.isArray(rows) ? (rows[0] as StudentInfo) : null;
 
     if (!student?.email) {
       return res.status(404).json({ error: "Student not found or missing email." });
