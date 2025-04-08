@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+// import Link from "next/link";
 import Image from "next/image"; // ✅ Optimized image component
 import AdminRegistrationForm from "../../components/AdminRegistrationForm";
 
@@ -32,7 +32,7 @@ const AdminRegisterPage = () => {
         {/* Navbar */}
         <nav className="flex justify-between items-center p-6 bg-white bg-opacity-90 shadow-md">
           <div className="text-xl font-bold text-blue-500">BISU Clinic</div>
-          <ul className="flex space-x-8">
+          {/* <ul className="flex space-x-8">
             <li>
               <Link href="/" className="text-blue-500 font-medium">
                 Home
@@ -48,7 +48,7 @@ const AdminRegisterPage = () => {
                 Contact
               </Link>
             </li>
-          </ul>
+          </ul> */}
         </nav>
 
         {/* Hero Section */}
