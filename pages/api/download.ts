@@ -3,17 +3,8 @@ import pool from '../../lib/db';
 import { getCookie } from 'cookies-next';
 import type { RowDataPacket } from 'mysql2';
 
-interface AdminRow extends RowDataPacket {
-  username: string;
-  role: string;
-}
-
-interface UserRow extends RowDataPacket {
-  username: string;
-}
-
 interface FileRow extends RowDataPacket {
-  file_path: string;
+  file_path: string;  // This should be the full public URL
   student_id: string;
 }
 
@@ -36,50 +27,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Missing or invalid filename' });
     }
 
-    let isAdmin = false;
-    let userType: 'admin' | 'user' | null = null;
-
-    const [adminResult] = await pool.query<AdminRow[]>(
-      'SELECT username, role FROM admin_accounts WHERE admin_id = ?',
-      [userId]
-    );
-
-    if (adminResult.length > 0) {
-      const role = adminResult[0].role;
-      if (role === 'admin' || role === 'super_admin') {
-        isAdmin = true;
-        userType = 'admin';
-      }
-    } else {
-      const [userResult] = await pool.query<UserRow[]>(
-        'SELECT username FROM users WHERE id = ?',
-        [userId]
-      );
-
-      if (userResult.length > 0) {
-        userType = 'user';
-      }
-    }
-
-    if (!userType) {
-      return res.status(401).json({ error: 'Invalid user' });
-    }
-
-    const [fileResult] = await pool.query<FileRow[]>(
-      'SELECT file_path, student_id FROM files WHERE file_name = ?',
-      [filename]
-    );
+    // Fetch file details from the database
+    const [fileResult] = await pool.query<FileRow[]>(`
+      SELECT file_path, student_id 
+      FROM files 
+      WHERE file_name = ?
+    `, [filename]);
 
     if (fileResult.length === 0) {
       return res.status(404).json({ error: 'File not found' });
     }
 
-    const { file_path, student_id } = fileResult[0];
+    const { file_path } = fileResult[0];
 
-    if (!isAdmin && student_id !== userId) {
-      return res.status(403).json({ error: 'You do not have permission to download this file' });
-    }
-
+    // Redirect to the full public URL directly
     return res.redirect(file_path);
   } catch (error) {
     console.error('Download handler error:', error);

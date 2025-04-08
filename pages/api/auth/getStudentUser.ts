@@ -17,7 +17,6 @@ interface StudentRow extends RowDataPacket {
   photo_path: string | null;
 }
 
-// ✅ Define JWT payload structure
 interface JwtPayload {
   studentId: number;
   iat?: number;
@@ -26,7 +25,7 @@ interface JwtPayload {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({ message: "Method not allowed" });
   }
 
   try {
@@ -34,15 +33,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const token = cookies.studentAuthToken;
 
     if (!token) {
-      return res.status(401).json({ error: "Unauthorized. No token provided." });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload;
-
     const studentId = decoded.studentId;
 
     if (!studentId) {
-      return res.status(401).json({ error: "Invalid token payload." });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const [students] = await pool.query<StudentRow[]>(
@@ -54,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     if (students.length === 0) {
-      return res.status(404).json({ error: "Student not found" });
+      return res.status(404).json({ message: "Student not found" });
     }
 
     const student = students[0];
@@ -69,8 +67,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       created_at: student.created_at,
       photo_path: student.photo_path,
     });
-  } catch (error) {
-    console.error("Error fetching student user:", error);
-    return res.status(401).json({ error: "Invalid or expired token" });
+  } catch (error: any) {
+    console.error("Error verifying token or fetching student:", error);
+
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ message: "Token expired" });
+    }
+
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    return res.status(500).json({ message: "Internal server error" });
   }
 }

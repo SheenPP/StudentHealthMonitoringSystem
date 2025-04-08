@@ -50,7 +50,7 @@ export default function Archives() {
     try {
       await axios.post(
         "/api/recycle-bin",
-        { action: "restore", file_id: id },
+        { action: "restore", file_id: id, username: user?.username }, // Include username
         { withCredentials: true }
       );
       alert(`"${file_name}" has been restored successfully!`);
@@ -62,14 +62,14 @@ export default function Archives() {
       setProcessingId(null);
     }
   };
-
+  
   const handleDelete = async (id: string, file_name: string) => {
     if (!window.confirm(`Are you sure you want to permanently delete "${file_name}"?`)) return;
     setProcessingId(id);
     try {
       await axios.post(
         "/api/recycle-bin",
-        { action: "delete", file_id: id },
+        { action: "delete", file_id: id, username: user?.username }, // Include username
         { withCredentials: true }
       );
       alert(`"${file_name}" has been permanently deleted.`);
@@ -81,6 +81,7 @@ export default function Archives() {
       setProcessingId(null);
     }
   };
+  
 
   const SkeletonTableRow = () => (
     <tr>

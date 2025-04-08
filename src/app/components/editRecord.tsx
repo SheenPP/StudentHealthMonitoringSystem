@@ -104,40 +104,40 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
   };
 
   if (loading || !studentData) {
-    return <p className="text-center py-10">Loading student record...</p>;
+    return <p className="text-center py-10 text-gray-800 dark:text-white">Loading student record...</p>;
   }
 
   return (
-    <div className="relative">
+    <div className="relative dark:bg-black p-4 rounded-md">
       <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block mb-1">Student ID</label>
-          <input type="text" value={studentData.student_id} className="border p-2 w-full" disabled />
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Student ID</label>
+          <input type="text" value={studentData.student_id} className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md" disabled />
         </div>
 
         <div>
-          <label className="block mb-1">First Name</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">First Name</label>
           <input
             type="text"
             value={studentData.first_name}
             onChange={(e) => handleChange('first_name', e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Last Name</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Last Name</label>
           <input
             type="text"
             value={studentData.last_name}
             onChange={(e) => handleChange('last_name', e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Gender</label>
-          <div className="flex gap-4">
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Gender</label>
+          <div className="flex gap-4 text-gray-800 dark:text-gray-200 font-semibold">
             {['Male', 'Female'].map((g) => (
               <label key={g}>
                 <input
@@ -173,91 +173,92 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
         />
 
         <div>
-          <label className="block mb-1">Date of Birth</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Date of Birth</label>
           <input
             type="date"
             value={studentData.date_of_birth}
             onChange={(e) => handleChange('date_of_birth', e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Email</label>
-          <input type="email" value={studentData.email} className="border p-2 w-full" readOnly />
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Email</label>
+          <input type="email" value={studentData.email} className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md" readOnly />
         </div>
 
         <div>
-          <label className="block mb-1">Phone Number</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Phone Number</label>
           <input
             type="text"
             value={studentData.phone_number}
             onChange={(e) => handleChange('phone_number', e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Present Address</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Present Address</label>
           <input
             type="text"
             value={studentData.present_address}
             onChange={(e) => handleChange('present_address', e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Home Address</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Home Address</label>
           <input
             type="text"
             value={studentData.home_address}
             onChange={(e) => handleChange('home_address', e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Medical History</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Medical History</label>
           <textarea
             value={studentData.medical_history}
             onChange={(e) => handleChange('medical_history', e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
+            rows={3}
           />
         </div>
 
         <div>
-          <label className="block mb-1">Emergency Contact Name</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Emergency Contact Name</label>
           <input
             type="text"
             value={studentData.emergency_contact_name}
             onChange={(e) => handleChange('emergency_contact_name', e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Emergency Contact Relation</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Emergency Contact Relation</label>
           <input
             type="text"
             value={studentData.emergency_contact_relation}
             onChange={(e) => handleChange('emergency_contact_relation', e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Emergency Contact Phone</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Emergency Contact Phone</label>
           <input
             type="text"
             value={studentData.emergency_contact_phone}
             onChange={(e) => handleChange('emergency_contact_phone', e.target.value)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Student Photo</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Student Photo</label>
           {studentData.photo_path && (
             <Image
               src={studentData.photo_path}
@@ -270,16 +271,16 @@ const EditRecord: React.FC<EditRecordProps> = ({ studentId, onClose }) => {
           <input
             type="file"
             onChange={(e) => setNewPhoto(e.target.files?.[0] || null)}
-            className="border p-2 w-full"
+            className="border p-2 w-full font-semibold dark:bg-gray-900 dark:text-white dark:border-gray-700 rounded-md"
             accept="image/*"
           />
         </div>
 
         <div className="col-span-3 flex justify-end gap-4 mt-4">
-          <button type="button" onClick={() => onClose()} className="bg-gray-500 text-white px-4 py-2 rounded-md">
+          <button type="button" onClick={() => onClose()} className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
             Cancel
           </button>
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md">
+          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
             Save Changes
           </button>
         </div>

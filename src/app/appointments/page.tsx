@@ -83,9 +83,13 @@ export default function UserAppointments() {
       router.push("/");
     } else if (authChecked && user) {
       fetchAppointments();
+  
+      axios.post("/api/appointment/mark-all-seen").catch((err) => {
+        console.error("Failed to mark appointments as seen:", err);
+      });
     }
   }, [authChecked, user, fetchAppointments, router]);
-
+  
   const handleMarkAsDone = async () => {
     if (!selectedAppointmentId) return;
 

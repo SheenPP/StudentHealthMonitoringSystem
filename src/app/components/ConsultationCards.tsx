@@ -1,9 +1,8 @@
-"use client";
-
 import { Fragment, useState, useEffect, useCallback } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { FiEdit, FiTrash, FiDownload } from "react-icons/fi";
 import ConfirmationDialog from "./ConfirmationDialog";
+import useAuth from "../hooks/useAuth"; // Import your authentication hook
 
 interface Consultation {
   name: string;
@@ -28,6 +27,8 @@ interface ConsultationCardsProps {
 }
 
 const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }) => {
+  const { user } = useAuth(); // Use your custom hook to get user info
+
   const [consultations] = useState<Consultation[]>([
     { name: "Medical Consultation" },
     { name: "Medical Referral" },
@@ -131,7 +132,7 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
   };
 
   const handleDelete = async () => {
-    if (!selectedConsultation || !fileToDelete) return;
+    if (!selectedConsultation || !fileToDelete || !user) return; // Ensure user is defined
 
     setLoading(true);
     try {
@@ -143,6 +144,7 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
           file_path: fileToDelete.path,
           student_id: selectedStudent!.student_id,
           consultation_type: selectedConsultation.name,
+          username: user.username, // Include the username
         }),
       });
 
@@ -160,7 +162,7 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
 
   const handleDownload = (filePath: string) => {
     if (!filePath) return;
-  
+
     const a = document.createElement("a");
     a.href = filePath;
     a.target = "_blank"; // Optional: open in new tab
@@ -169,7 +171,6 @@ const ConsultationCards: React.FC<ConsultationCardsProps> = ({ selectedStudent }
     a.click();
     a.remove();
   };
-  
 
   useEffect(() => {
     if (isOpen && selectedConsultation) {

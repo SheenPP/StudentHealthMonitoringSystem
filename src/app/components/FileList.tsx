@@ -87,6 +87,11 @@ const FileList: React.FC<FileListProps> = ({
     if (currentPage < totalPages) onPageChange(currentPage + 1);
   };
 
+  const handleDownload = (fileName: string) => {
+    console.log('Downloading file:', fileName); // Log the filename for debugging
+    window.location.href = `/api/download?filename=${encodeURIComponent(fileName)}`;
+  };
+
   return (
     <div className="max-w-5xl mx-auto p-6 bg-gray-50 shadow-md rounded-lg">
       <h2 className="text-2xl font-semibold text-gray-800 text-center mb-6 flex items-center justify-center gap-2">
@@ -140,13 +145,12 @@ const FileList: React.FC<FileListProps> = ({
                         {new Date(file.upload_date).toLocaleDateString()}
                       </td>
                       <td className="p-4 text-center">
-                        <a
-                          href={`/${file.file_path}`}
-                          download
+                        <button
+                          onClick={() => handleDownload(file.file_name)}
                           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md shadow-md hover:bg-blue-700 transition duration-200"
                         >
                           <Download size={16} /> Download
-                        </a>
+                        </button>
                       </td>
                     </tr>
                   ))}

@@ -20,22 +20,28 @@ const Navbar: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await axios.get('/api/auth/getStudentUser', {
-          withCredentials: true,
-        });
-        setUser(response.data);
-      } catch (err) {
-        console.error('Error fetching user:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
+    useEffect(() => {
+      const fetchUser = async () => {
+        try {
+          const response = await axios.get('/api/auth/getStudentUser', {
+            withCredentials: true,
+          });
+          setUser(response.data);
+        } catch (err: any) {
+          if (err.response?.status === 401) {
+            // ✅ Don't log this to console to avoid red screen in dev
+            setUser(null);
+          } else {
+            console.error('Unexpected error fetching user:', err);
+          }
+        } finally {
+          setLoading(false);
+        }
+      };
+    
+      fetchUser();
+    }, []);
+    
 
   const handleLogout = async () => {
     try {
@@ -55,7 +61,7 @@ const Navbar: React.FC = () => {
     <nav className="bg-white shadow-md border-b border-gray-200">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center py-3">
-          <Link href="/" className="text-xl font-semibold text-gray-800">
+          <Link href="/student/dashboard" className="text-xl font-semibold text-gray-800">
             BISU Clinic
           </Link>
 
@@ -74,13 +80,6 @@ const Navbar: React.FC = () => {
             >
               <FiCalendar size={20} />
               <span>Appointments</span>
-            </Link>
-            <Link
-              href="/student/profile"
-              className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
-            >
-              <FiUser size={20} />
-              <span>Profile</span>
             </Link>
           </div>
 
@@ -127,13 +126,7 @@ const Navbar: React.FC = () => {
                 <FiCalendar size={20} />
                 <span>Appointments</span>
               </Link>
-              <Link
-                href="/student/profile"
-                className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
-              >
-                <FiUser size={20} />
-                <span>Profile</span>
-              </Link>
+              
 
               {loading ? (
                 <span className="text-gray-600">Loading...</span>

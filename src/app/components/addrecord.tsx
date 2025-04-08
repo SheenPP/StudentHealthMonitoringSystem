@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React, { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useOptions } from '../options/useOptions';
@@ -63,7 +63,6 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
 
     let photoUrl = '';
 
-    // Upload to Supabase if photo selected
     if (studentPhoto) {
       const fileExt = studentPhoto.name.split('.').pop();
       const fileName = `${studentId}.${fileExt}`;
@@ -86,13 +85,10 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
       photoUrl = data.publicUrl;
     }
 
-    // Send data as JSON
     try {
       const response = await fetch('/api/students', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           student_id: studentId,
           gender,
@@ -126,40 +122,42 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
   };
 
   return (
-    <div className="relative">
+    <div className="relative dark:bg-black p-4 rounded-md">
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block mb-1">Student ID</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Student ID</label>
           <input
             type="text"
             value={studentId}
             onChange={(e) => setStudentId(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
             required
-          />
-        </div>
-        <div>
-          <label className="block mb-1">First Name</label>
-          <input
-            type="text"
-            value={firstName}
-            className="border border-gray-300 rounded-md p-2 w-full"
-            readOnly
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Last Name</label>
-          <input
-            type="text"
-            value={lastName}
-            className="border border-gray-300 rounded-md p-2 w-full"
-            readOnly
           />
         </div>
 
         <div>
-          <label className="block mb-1">Gender</label>
-          <div className="flex gap-4">
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">First Name</label>
+          <input
+            type="text"
+            value={firstName}
+            readOnly
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Last Name</label>
+          <input
+            type="text"
+            value={lastName}
+            readOnly
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Gender</label>
+          <div className="flex gap-4 text-gray-800 dark:text-gray-200 font-semibold">
             <label>
               <input
                 type="radio"
@@ -199,105 +197,105 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
         <YearSelect year={year} setYear={setYear} years={years} />
 
         <div>
-          <label className="block mb-1">Date of Birth</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Date of Birth</label>
           <input
             type="date"
             value={dateOfBirth}
             onChange={(e) => setDateOfBirth(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
             required
           />
         </div>
 
         <div>
-          <label className="block mb-1">Email</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Email</label>
           <input
             type="email"
             value={email}
             readOnly
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Phone Number</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Phone Number</label>
           <input
             type="tel"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Present Address</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Present Address</label>
           <input
             type="text"
             value={presentAddress}
             onChange={(e) => setPresentAddress(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Home Address</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Home Address</label>
           <input
             type="text"
             value={homeAddress}
             onChange={(e) => setHomeAddress(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
           />
         </div>
 
         <div>
-          <label className="block mb-1">Medical History</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Medical History</label>
           <textarea
             value={medicalHistory}
             onChange={(e) => setMedicalHistory(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
             rows={3}
           />
         </div>
 
         <div>
-          <label className="block mb-1">Emergency Contact Name</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Emergency Contact Name</label>
           <input
             type="text"
             value={emergencyContactName}
             onChange={(e) => setEmergencyContactName(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
             required
           />
         </div>
 
         <div>
-          <label className="block mb-1">Emergency Contact Relation</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Emergency Contact Relation</label>
           <input
             type="text"
             value={emergencyContactRelation}
             onChange={(e) => setEmergencyContactRelation(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
             required
           />
         </div>
 
         <div>
-          <label className="block mb-1">Emergency Contact Phone</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Emergency Contact Phone</label>
           <input
             type="tel"
             value={emergencyContactPhone}
             onChange={(e) => setEmergencyContactPhone(e.target.value)}
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white rounded-md p-2 w-full font-semibold"
             required
           />
         </div>
 
         <div>
-          <label className="block mb-1">Student Photo</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-200">Student Photo</label>
           <input
             type="file"
             onChange={(e) => setStudentPhoto(e.target.files?.[0] || null)}
-            className="border border-gray-300 rounded-md p-2 w-full"
+            className="border border-gray-300 dark:border-gray-700 dark:bg-gray-900 text-white rounded-md p-2 w-full font-semibold"
             accept="image/*"
           />
         </div>
@@ -305,7 +303,7 @@ const AddRecord: React.FC<AddRecordProps> = ({ onAddSuccess, onAddFailure }) => 
         <div className="col-span-3 text-right mt-4">
           <button
             type="submit"
-            className="bg-blue-600 text-white py-2 px-4 rounded-md"
+            className="bg-blue-600 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 transition"
           >
             Add Record
           </button>

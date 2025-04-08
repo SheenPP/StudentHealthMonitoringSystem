@@ -44,6 +44,7 @@ const Sidebar: React.FC = () => {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [unseenCount, setUnseenCount] = useState(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -57,7 +58,19 @@ const Sidebar: React.FC = () => {
       }
     };
 
+    const fetchUnseenAppointments = async () => {
+      try {
+        const response = await axios.get("/api/appointment/unseen-count");
+        setUnseenCount(response.data.count || 0);
+      } catch (error) {
+        console.error("Failed to fetch unseen appointment count:", error);
+      }
+    };
+
     fetchUser();
+    fetchUnseenAppointments();
+    const interval = setInterval(fetchUnseenAppointments, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleSignOut = async () => {
@@ -73,6 +86,39 @@ const Sidebar: React.FC = () => {
     return <SkeletonSidebar isCollapsed={isCollapsed} />;
   }
 
+  const NavItem = ({
+    href,
+    icon,
+    text,
+    showBadge,
+  }: {
+    href: string;
+    icon: React.ReactNode;
+    text: string;
+    showBadge?: boolean;
+  }) => (
+    <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
+      <Link
+        href={href}
+        className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
+          pathname === href ? "bg-blue-100 text-blue-600" : "hover:bg-gray-200 text-gray-700"
+        }`}
+      >
+        {icon}
+        {!isCollapsed && (
+          <span className="ml-3 flex items-center gap-2">
+            {text}
+            {showBadge && unseenCount > 0 && (
+              <span className="inline-block bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                {unseenCount}
+              </span>
+            )}
+          </span>
+        )}
+      </Link>
+    </li>
+  );
+
   return (
     <div
       className={`sidebar bg-gray-50 ${isCollapsed ? "w-24" : "w-64"} p-6 border-r border-gray-200 shadow-md flex flex-col transition-all duration-300 relative`}
@@ -84,99 +130,23 @@ const Sidebar: React.FC = () => {
         {isCollapsed ? <FiChevronRight size={24} /> : <FiChevronLeft size={24} />}
       </button>
 
-      {user && (
-        <UserProfile user={user} isCollapsed={isCollapsed} error={error} />
-      )}
+      {user && <UserProfile user={user} isCollapsed={isCollapsed} error={error} />}
 
       <nav className="flex-grow mt-4">
         <ul className="space-y-4">
-          <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
-            <Link
-              href="/dashboard"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
-                pathname === "/dashboard"
-                  ? "bg-blue-100 text-blue-600"
-                  : "hover:bg-gray-200 text-gray-700"
-              }`}
-            >
-              <FiGrid size={20} />
-              {!isCollapsed && <span className="ml-3">Dashboard</span>}
-            </Link>
-          </li>
-
+          <NavItem href="/dashboard" icon={<FiGrid size={20} />} text="Dashboard" />
           <hr className="border-gray-300 my-4" />
-
-          <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
-            <Link
-              href="/records"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
-                pathname === "/records"
-                  ? "bg-blue-100 text-blue-600"
-                  : "hover:bg-gray-200 text-gray-700"
-              }`}
-            >
-              <FiFileText size={20} />
-              {!isCollapsed && <span className="ml-3">Records</span>}
-            </Link>
-          </li>
-
-          <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
-            <Link
-              href="/student-profile"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
-                pathname === "/student-profile"
-                  ? "bg-blue-100 text-blue-600"
-                  : "hover:bg-gray-200 text-gray-700"
-              }`}
-            >
-              <FiUser size={20} />
-              {!isCollapsed && <span className="ml-3">Student Profile</span>}
-            </Link>
-          </li>
-
-          <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
-            <Link
-              href="/appointments"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
-                pathname === "/appointments"
-                  ? "bg-blue-100 text-blue-600"
-                  : "hover:bg-gray-200 text-gray-700"
-              }`}
-            >
-              <FiCalendar size={20} />
-              {!isCollapsed && <span className="ml-3">Appointments</span>}
-            </Link>
-          </li>
-
+          <NavItem href="/records" icon={<FiFileText size={20} />} text="Records" />
+          <NavItem href="/student-profile" icon={<FiUser size={20} />} text="Student Profile" />
+          <NavItem
+            href="/appointments"
+            icon={<FiCalendar size={20} />}
+            text="Appointments"
+            showBadge={true}
+          />
           <hr className="border-gray-300 my-4" />
-
-          <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
-            <Link
-              href="/logs"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
-                pathname === "/logs"
-                  ? "bg-blue-100 text-blue-600"
-                  : "hover:bg-gray-200 text-gray-700"
-              }`}
-            >
-              <FiBookOpen size={20} />
-              {!isCollapsed && <span className="ml-3">Logs</span>}
-            </Link>
-          </li>
-
-          <li className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start"}`}>
-            <Link
-              href="/archives"
-              className={`flex items-center py-1 px-1 transition-colors rounded-lg font-medium ${
-                pathname === "/archives"
-                  ? "bg-blue-100 text-blue-600"
-                  : "hover:bg-gray-200 text-gray-700"
-              }`}
-            >
-              <FiArchive size={20} />
-              {!isCollapsed && <span className="ml-3">Archives</span>}
-            </Link>
-          </li>
+          <NavItem href="/logs" icon={<FiBookOpen size={20} />} text="Logs" />
+          <NavItem href="/archives" icon={<FiArchive size={20} />} text="Archives" />
         </ul>
       </nav>
 

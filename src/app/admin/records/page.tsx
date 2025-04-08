@@ -1,13 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import FileList from "../../components/FileList";
 import Sidebar from "../../components/AdminSidebar";
 import Navbar from "../../components/Header";
 import useAdminAuth from "../../hooks/useAdminAuth";
 
-// ✅ Skeleton loader layout
 const SkeletonLayout = () => (
   <div className="flex flex-col min-h-screen bg-gray-100">
     <div className="h-16 bg-gray-200" />
@@ -34,21 +33,24 @@ const Records = () => {
   const [consultationType, setConsultationType] = useState(searchParams?.get("consultationType") || "");
   const [page, setPage] = useState(Number(searchParams?.get("page") || 1));
 
-  useEffect(() => {
+  const updateQueryParams = useCallback(() => {
     const params = new URLSearchParams();
     if (searchQuery) params.set("search", searchQuery);
     if (consultationType) params.set("consultationType", consultationType);
     params.set("page", page.toString());
-
     router.push(`/admin/records?${params.toString()}`);
-  }, [searchQuery, consultationType, page, router]); // Added router here
+  }, [searchQuery, consultationType, page, router]);
+
+  useEffect(() => {
+    updateQueryParams();
+  }, [updateQueryParams]);
 
   if (!authChecked || authLoading) {
     return <SkeletonLayout />;
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gray-100">
       <Navbar />
 
       <div className="flex flex-1">
@@ -57,7 +59,6 @@ const Records = () => {
         </div>
 
         <div className="flex-1 p-6 bg-white">
-          {/* Search + Filter Bar */}
           <div className="mb-4 flex flex-col sm:flex-row gap-4 sm:items-center">
             <input
               type="text"
@@ -89,7 +90,6 @@ const Records = () => {
             </select>
           </div>
 
-          {/* ✅ FileList with props */}
           <FileList
             search={searchQuery}
             consultationType={consultationType}
