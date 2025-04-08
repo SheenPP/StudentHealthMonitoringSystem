@@ -112,9 +112,6 @@ export default function AppointmentsPage() {
             <div className="flex flex-col md:flex-row md:space-x-6 gap-6">
               {/* Book Form */}
               <div className="w-full md:w-1/2 bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 sm:p-6 border border-gray-300 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-700 dark:text-white mb-4 text-center">
-                  Book an Appointment
-                </h2>
                 <AppointmentForm
                   studentId={student.student_id}
                   onBookSuccess={() => {
