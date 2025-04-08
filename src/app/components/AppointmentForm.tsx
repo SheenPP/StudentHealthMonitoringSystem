@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { format } from "date-fns";
-import { Calendar, Clock, FileText, Loader, CheckCircle, XCircle } from "lucide-react";
+import { format, getDay } from "date-fns";
+import {
+  Calendar,
+  Clock,
+  FileText,
+  Loader,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -21,6 +28,8 @@ export default function AppointmentForm({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
+  const today = format(new Date(), "yyyy-MM-dd");
+
   const formatDate = (inputDate: string): string =>
     inputDate ? format(new Date(inputDate), "MMMM d, yyyy") : "";
 
@@ -32,10 +41,29 @@ export default function AppointmentForm({
     return format(dateObj, "h:mm a");
   };
 
+  const isWeekend = (selectedDate: string) => {
+    const day = getDay(new Date(selectedDate)); // 0 = Sunday, 6 = Saturday
+    return day === 0 || day === 6;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (isWeekend(date)) {
+      setLoading(false);
+      toast.warning("Appointments are only available on weekdays.", {
+        position: "bottom-center",
+        icon: <XCircle className="text-yellow-500" />,
+        style: {
+          fontSize: "0.9rem",
+          padding: "12px 16px",
+          borderRadius: "8px",
+        },
+      });
+      return;
+    }
 
     try {
       const res = await fetch("/api/appointment/book", {
@@ -50,16 +78,26 @@ export default function AppointmentForm({
         setTime("");
         setReason("");
         toast.success("Appointment booked successfully!", {
-          position: "top-center",
+          position: "bottom-center",
           icon: <CheckCircle className="text-green-500" />,
+          style: {
+            fontSize: "0.9rem",
+            padding: "12px 16px",
+            borderRadius: "8px",
+          },
         });
       } else {
         const data = await res.json();
         const message = data.error || "⚠️ Failed to book appointment. Try again.";
         setError(message);
         toast.error(message, {
-          position: "top-center",
+          position: "bottom-center",
           icon: <XCircle className="text-red-500" />,
+          style: {
+            fontSize: "0.9rem",
+            padding: "12px 16px",
+            borderRadius: "8px",
+          },
         });
       }
     } catch (error: unknown) {
@@ -69,8 +107,13 @@ export default function AppointmentForm({
           : "⚠️ Something went wrong. Please check your connection.";
       setError(message);
       toast.error(message, {
-        position: "top-center",
+        position: "bottom-center",
         icon: <XCircle className="text-red-500" />,
+        style: {
+          fontSize: "0.9rem",
+          padding: "12px 16px",
+          borderRadius: "8px",
+        },
       });
     } finally {
       setLoading(false);
@@ -80,7 +123,7 @@ export default function AppointmentForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white dark:bg-gray-800 max-w-lg mx-auto"
+      className="bg-white dark:bg-gray-800 max-w-lg mx-auto p-6"
     >
       <h2 className="text-2xl font-semibold mb-4 text-center text-gray-800 dark:text-white flex items-center justify-center gap-2">
         <Calendar size={28} /> Book an Appointment
@@ -105,13 +148,19 @@ export default function AppointmentForm({
           type="date"
           id="appointment-date"
           value={date}
+          min={today}
           onChange={(e) => setDate(e.target.value)}
           required
           className="border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white font-semibold p-2 w-full rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         {date && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            📅 {formatDate(date)}
+          <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">
+            📅 {formatDate(date)}{" "}
+            {isWeekend(date) && (
+              <span className="text-red-500 font-semibold">
+                (Weekend not allowed)
+              </span>
+            )}
           </p>
         )}
       </div>
@@ -131,6 +180,8 @@ export default function AppointmentForm({
           value={time}
           onChange={(e) => setTime(e.target.value)}
           required
+          min="08:00"
+          max="17:00"
           className="border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white font-semibold p-2 w-full rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         {time && (

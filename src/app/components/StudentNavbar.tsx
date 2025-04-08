@@ -89,9 +89,6 @@ const Navbar: React.FC = () => {
               <span className="text-gray-600">Loading...</span>
             ) : user ? (
               <div className="flex items-center space-x-3">
-                <span className="text-gray-800 font-medium">
-                  {user.first_name} {user.last_name}
-                </span>
                 <Image
                   src={avatarSrc}
                   alt="User Avatar"

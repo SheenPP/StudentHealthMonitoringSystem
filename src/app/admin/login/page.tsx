@@ -33,7 +33,7 @@ const AdminLoginPage = () => {
         {/* Navbar */}
         <nav className="flex justify-between items-center p-6 bg-white bg-opacity-90 shadow-md">
           <div className="text-xl font-bold text-blue-500">BISU Clinic - Admin</div>
-          <ul className="flex space-x-8">
+          {/* <ul className="flex space-x-8">
             <li>
               <Link href="/" className="text-blue-500 font-medium">
                 Home
@@ -49,7 +49,7 @@ const AdminLoginPage = () => {
                 Contact
               </Link>
             </li>
-          </ul>
+          </ul> */}
         </nav>
 
         {/* Hero Section */}

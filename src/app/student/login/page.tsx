@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+// import Link from "next/link";
 import StudentLogin from "../../components/StudentLogin";
-import { FiMenu } from "react-icons/fi";
+// import { FiMenu } from "react-icons/fi";
 import Image from "next/image"; // ✅ Use next/image for optimized images
 
 const StudentLoginPage = () => {
   const [loading, setLoading] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -35,21 +35,21 @@ const StudentLoginPage = () => {
         <nav className="flex justify-between items-center p-4 md:p-6 bg-white bg-opacity-90 shadow-md">
           <div className="text-lg md:text-xl font-bold text-blue-500">BISU Clinic</div>
 
-          <div className="md:hidden">
+          {/* <div className="md:hidden">
             <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
               <FiMenu className="text-blue-500 text-2xl" />
             </button>
-          </div>
+          </div> */}
 
-          <ul className="hidden md:flex space-x-6">
+          {/* <ul className="hidden md:flex space-x-6">
             <li><Link href="/" className="text-blue-500 font-medium">Home</Link></li>
             <li><Link href="/Page404" className="text-gray-600 hover:text-blue-500 transition">About</Link></li>
             <li><Link href="/Page404" className="text-gray-600 hover:text-blue-500 transition">Contact</Link></li>
-          </ul>
+          </ul> */}
         </nav>
 
         {/* Mobile Dropdown Menu */}
-        {isMenuOpen && (
+        {/* {isMenuOpen && (
           <div className="md:hidden bg-white bg-opacity-90 shadow-md absolute w-full z-50">
             <ul className="flex flex-col items-center p-4 space-y-3">
               <li><Link href="/" className="text-blue-500 font-medium">Home</Link></li>
@@ -57,7 +57,7 @@ const StudentLoginPage = () => {
               <li><Link href="/Page404" className="text-gray-600 hover:text-blue-500 transition">Contact</Link></li>
             </ul>
           </div>
-        )}
+        )} */}
 
         {/* Hero Section */}
         <section className="flex flex-col md:flex-row items-center justify-center px-6 md:px-12 py-8 md:py-16 text-white">

@@ -1,17 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import StudentRegistration from "../../components/StudentRegistration";
-import { FiMenu } from "react-icons/fi";
+// import { FiMenu } from "react-icons/fi";
 import Image from "next/image";
 
 const StudentRegisterPage = () => {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -56,14 +55,14 @@ const StudentRegisterPage = () => {
           </div>
 
           {/* Mobile Menu */}
-          <div className="md:hidden">
+          {/* <div className="md:hidden">
             <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
               <FiMenu className="text-blue-500 text-2xl" />
             </button>
-          </div>
+          </div> */}
 
           {/* Desktop Menu */}
-          <ul className="hidden md:flex space-x-6">
+          {/* <ul className="hidden md:flex space-x-6">
             <li>
               <Link href="/" className="text-blue-500 font-medium">
                 Home
@@ -85,11 +84,11 @@ const StudentRegisterPage = () => {
                 Contact
               </Link>
             </li>
-          </ul>
+          </ul> */}
         </nav>
 
         {/* Mobile Dropdown Menu */}
-        {isMenuOpen && (
+        {/* {isMenuOpen && (
           <div className="md:hidden bg-white bg-opacity-90 shadow-md absolute w-full z-50">
             <ul className="flex flex-col items-center p-4 space-y-3">
               <li>
@@ -115,7 +114,7 @@ const StudentRegisterPage = () => {
               </li>
             </ul>
           </div>
-        )}
+        )} */}
 
         {/* Hero Section */}
         <section className="flex flex-col md:flex-row items-center justify-center px-6 md:px-12 py-8 md:py-16 text-white">
