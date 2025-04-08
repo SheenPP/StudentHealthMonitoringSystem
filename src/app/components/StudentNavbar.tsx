@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FiMenu, FiX, FiCalendar, FiUser, FiLogOut } from 'react-icons/fi';
+import { FiMenu, FiX, FiCalendar, FiLogOut } from 'react-icons/fi';
 import axios from 'axios';
 import Image from 'next/image';
 
@@ -27,14 +27,14 @@ const Navbar: React.FC = () => {
             withCredentials: true,
           });
           setUser(response.data);
-        } catch (err: any) {
-          if (err.response?.status === 401) {
-            // ✅ Don't log this to console to avoid red screen in dev
+        } catch (err: unknown) {
+          if (axios.isAxiosError(err) && err.response?.status === 401) {
             setUser(null);
           } else {
             console.error('Unexpected error fetching user:', err);
           }
-        } finally {
+        }
+         finally {
           setLoading(false);
         }
       };

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 import Navbar from "../../components/StudentNavbar";
 import AppointmentForm from "../../components/AppointmentForm";
 import { User, CalendarDays } from "lucide-react";
@@ -36,47 +36,47 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+
+        const studentRes = await axios.get("/api/auth/getStudentUser", {
+          withCredentials: true,
+        });
+
+        const userData = studentRes.data.user || studentRes.data;
+        const studentId = userData?.student_id;
+
+        if (!studentId) {
+          router.push("/student/login");
+          return;
+        }
+
+        setStudent({
+          student_id: studentId,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+        });
+
+        const appointmentRes = await axios.get(
+          `/api/appointment/route?studentId=${studentId}`,
+          { withCredentials: true }
+        );
+
+        setAppointments(appointmentRes.data.appointments || []);
+      } catch (error: unknown) {
+        if (isAxiosError(error) && error.response?.status === 401) {
+          router.push("/student/login");
+        } else {
+          console.error("Error fetching data:", error);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-
-      const studentRes = await axios.get("/api/auth/getStudentUser", {
-        withCredentials: true,
-      });
-
-      const userData = studentRes.data.user || studentRes.data;
-      const studentId = userData?.student_id;
-
-      if (!studentId) {
-        router.push("/student/login");
-        return;
-      }
-
-      setStudent({
-        student_id: studentId,
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-      });
-
-      const appointmentRes = await axios.get(
-        `/api/appointment/route?studentId=${studentId}`,
-        { withCredentials: true }
-      );
-
-      setAppointments(appointmentRes.data.appointments || []);
-    } catch (error: any) {
-      if (error.response?.status === 401) {
-        router.push("/student/login");
-      } else {
-        console.error("Error fetching data:", error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [router]);
 
   if (loading) {
     return (
@@ -115,7 +115,20 @@ export default function AppointmentsPage() {
                 <h2 className="text-xl font-semibold text-gray-700 dark:text-white mb-4 text-center">
                   Book an Appointment
                 </h2>
-                <AppointmentForm studentId={student.student_id} onBookSuccess={fetchData} />
+                <AppointmentForm
+                  studentId={student.student_id}
+                  onBookSuccess={() => {
+                    // refresh appointments list after booking
+                    axios
+                      .get(`/api/appointment/route?studentId=${student.student_id}`, {
+                        withCredentials: true,
+                      })
+                      .then((res) =>
+                        setAppointments(res.data.appointments || [])
+                      )
+                      .catch((err) => console.error("Error refreshing appointments:", err));
+                  }}
+                />
               </div>
 
               {/* Appointment List */}
@@ -136,9 +149,16 @@ export default function AppointmentsPage() {
                     </thead>
                     <tbody>
                       {appointments.map((appointment) => (
-                        <tr key={appointment.id} className="border-b border-gray-200 dark:border-gray-600 text-sm sm:text-base">
-                          <td className="p-3">{formatDate(appointment.date)}</td>
-                          <td className="p-3">{formatTime(appointment.time)}</td>
+                        <tr
+                          key={appointment.id}
+                          className="border-b border-gray-200 dark:border-gray-600 text-sm sm:text-base"
+                        >
+                          <td className="p-3">
+                            {formatDate(appointment.date)}
+                          </td>
+                          <td className="p-3">
+                            {formatTime(appointment.time)}
+                          </td>
                           <td className="p-3">{appointment.reason}</td>
                           <td className="p-3">
                             <span

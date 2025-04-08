@@ -67,17 +67,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       created_at: student.created_at,
       photo_path: student.photo_path,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error verifying token or fetching student:", error);
-
+  
     if (error instanceof jwt.TokenExpiredError) {
       return res.status(401).json({ message: "Token expired" });
     }
-
+  
     if (error instanceof jwt.JsonWebTokenError) {
       return res.status(401).json({ message: "Invalid token" });
     }
-
+  
     return res.status(500).json({ message: "Internal server error" });
   }
+  
 }
