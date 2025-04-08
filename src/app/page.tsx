@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+// import Link from "next/link";
 import Login from "./components/LoginModal";
 import Image from "next/image"; // ✅ Use Next.js optimized image
 
