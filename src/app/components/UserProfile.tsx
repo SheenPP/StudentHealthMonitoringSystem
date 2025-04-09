@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface UserProfileProps {
   user: {
@@ -12,50 +13,37 @@ interface UserProfileProps {
     role: string;
     position: string;
     profile_picture: string;
-  } | null;
+  };
   isCollapsed: boolean;
   error: string;
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ user, isCollapsed, error }) => {
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
+
   return (
-    <div className={`pb-4 mb-4 border-b border-gray-200 ${isCollapsed ? 'flex justify-center' : ''}`}>
-      {error ? (
-        <div className="text-red-500">{error}</div>
-      ) : user ? (
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
-          <Image
-            src={user.profile_picture || `https://i.pravatar.cc/150?u=${user.username}`}
-            alt="User Avatar"
-            width={40}
-            height={40}
-            className="rounded-full"
-          />
-          {!isCollapsed && (
-            <div className="ml-2">
-              <div className="font-semibold">{`${user.lastname}, ${user.firstname}`}</div>
-              <div className="text-sm text-gray-500">{user.position}</div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
-          <Image
-            src="https://i.pravatar.cc/150?u=guest"
-            alt="Guest Avatar"
-            width={40}
-            height={40}
-            className="rounded-full"
-          />
-          {!isCollapsed && (
-            <div className="ml-2">
-              <div className="font-semibold">Guest</div>
-              <div className="text-sm text-gray-500">Sign in to continue</div>
-            </div>
-          )}
+    <Link
+      href="/profile"
+      className={`pb-4 mb-4 border-b border-gray-200 flex items-center hover:bg-gray-100 p-2 rounded-lg transition-colors ${
+        isCollapsed ? 'justify-center' : ''
+      }`}
+    >
+      <Image
+        src={user.profile_picture || `https://i.pravatar.cc/150?u=${user.username}`}
+        alt="User Avatar"
+        width={60}
+        height={60}
+        className="rounded-full"
+      />
+      {!isCollapsed && (
+        <div className="ml-2">
+          <div className="font-semibold">{`${user.lastname}, ${user.firstname}`}</div>
+          <div className="text-sm text-gray-500">{user.position}</div>
         </div>
       )}
-    </div>
+    </Link>
   );
 };
 

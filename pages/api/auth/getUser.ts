@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT id, username, firstname, lastname, role, position, profile_picture FROM users WHERE id = ?',
+      'SELECT id, username, firstname, lastname, email, role, position, profile_picture FROM users WHERE id = ?',
       [userId]
     );
 
@@ -51,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const user = rows[0];
-    const profilePictureUrl = user.profile_picture ? `/uploads/${user.profile_picture}` : null;
+    const profilePictureUrl = user.profile_picture ? `${user.profile_picture}` : null;
 
     return res.status(200).json({
       user: {

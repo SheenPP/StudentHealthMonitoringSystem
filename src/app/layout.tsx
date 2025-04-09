@@ -16,7 +16,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "BISU Calape CLinic",
+  title: "BISU Calape Clinic",
   description: "thesis",
 };
 

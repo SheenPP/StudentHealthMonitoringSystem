@@ -8,10 +8,12 @@ type User = {
   username: string;
   firstname: string;
   lastname: string;
+  email: string; 
   role: string;
   position: string;
   profilePicture?: string | null;
 };
+
 
 export default function useAuth() {
   const [user, setUser] = useState<User | null>(null);

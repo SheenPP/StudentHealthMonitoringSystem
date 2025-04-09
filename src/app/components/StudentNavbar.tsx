@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FiMenu, FiX, FiCalendar, FiLogOut } from 'react-icons/fi';
+import { FiMenu, FiX, FiCalendar, FiLogOut, FiUser } from 'react-icons/fi';
 import axios from 'axios';
 import Image from 'next/image';
 
@@ -20,28 +20,26 @@ const Navbar: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-    useEffect(() => {
-      const fetchUser = async () => {
-        try {
-          const response = await axios.get('/api/auth/getStudentUser', {
-            withCredentials: true,
-          });
-          setUser(response.data);
-        } catch (err: unknown) {
-          if (axios.isAxiosError(err) && err.response?.status === 401) {
-            setUser(null);
-          } else {
-            console.error('Unexpected error fetching user:', err);
-          }
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get('/api/auth/getStudentUser', {
+          withCredentials: true,
+        });
+        setUser(response.data);
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          setUser(null);
+        } else {
+          console.error('Unexpected error fetching user:', err);
         }
-         finally {
-          setLoading(false);
-        }
-      };
-    
-      fetchUser();
-    }, []);
-    
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -80,6 +78,14 @@ const Navbar: React.FC = () => {
             >
               <FiCalendar size={20} />
               <span>Appointments</span>
+            </Link>
+
+            <Link
+              href="/student/profile"
+              className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
+            >
+              <FiUser size={20} />
+              <span>Profile</span>
             </Link>
           </div>
 
@@ -123,7 +129,14 @@ const Navbar: React.FC = () => {
                 <FiCalendar size={20} />
                 <span>Appointments</span>
               </Link>
-              
+
+              <Link
+                href="/student/profile"
+                className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
+              >
+                <FiUser size={20} />
+                <span>Profile</span>
+              </Link>
 
               {loading ? (
                 <span className="text-gray-600">Loading...</span>
