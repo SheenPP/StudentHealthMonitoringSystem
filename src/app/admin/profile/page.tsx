@@ -7,6 +7,15 @@ import toast from 'react-hot-toast';
 import Sidebar from '../../components/AdminSidebar';
 import Header from '../../components/Header';
 
+// Define the type for the admin object
+type Admin = {
+  admin_id: number;
+  username: string;
+  email: string;
+  position: string;
+  profile_picture: string | null;
+};
+
 const getPasswordStrength = (password: string): string => {
   if (password.length < 8) return 'Weak';
   if (/[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[@$!%*?&._-]/.test(password)) {
@@ -22,7 +31,7 @@ const isPasswordValid = (password: string): boolean => {
 
 const AdminProfilePage = () => {
   const router = useRouter();
-  const [admin, setAdmin] = useState<any>(null);
+  const [admin, setAdmin] = useState<Admin | null>(null); // Use the Admin type
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     admin_id: 0,
@@ -92,7 +101,7 @@ const AdminProfilePage = () => {
       if (file && admin) {
         const form = new FormData();
         form.append('file', file);
-        form.append('admin_id', admin.id); // ✅ now passed to API
+        form.append('admin_id', admin.admin_id.toString()); // ✅ now passed to API
         form.append('username', admin.username);
         form.append('currentUrl', admin.profile_picture || '');
 
@@ -110,7 +119,7 @@ const AdminProfilePage = () => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            id: admin?.id,
+            id: admin?.admin_id,
           ...formData,
           profile_picture: uploadedUrl,
           password: password || undefined,
