@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -30,12 +30,19 @@ export default function EditProfile() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    // Check if the user is logged in
     axios
       .get<StudentProfile>("/api/auth/getStudentUser", { withCredentials: true })
-      .then((res) => setFormData(res.data))
-      .catch(() => toast.error("Failed to load profile"))
+      .then((res) => {
+        setFormData(res.data);
+      })
+      .catch(() => {
+        // If user is not authorized, redirect to login page
+        toast.error("You must be logged in to access this page.");
+        router.push("/student/login");
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   const validatePassword = (pass: string): boolean => {
     return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(pass);
@@ -151,7 +158,7 @@ export default function EditProfile() {
               />
             </div>
 
-            {/* Current Password */}
+            {/* Password Inputs */}
             <PasswordInput
               label="Current Password"
               value={currentPassword}
@@ -160,7 +167,6 @@ export default function EditProfile() {
               setShow={setShowCurrent}
             />
 
-            {/* New Password */}
             <PasswordInput
               label="New Password"
               value={newPassword}
@@ -169,7 +175,6 @@ export default function EditProfile() {
               setShow={setShowNew}
             />
 
-            {/* Confirm Password */}
             <PasswordInput
               label="Confirm Password"
               value={confirmPassword}
