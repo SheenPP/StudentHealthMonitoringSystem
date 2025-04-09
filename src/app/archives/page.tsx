@@ -120,7 +120,6 @@ export default function Archives() {
               <thead className="bg-blue-100 text-blue-800 text-left">
                 <tr>
                   <th className="px-6 py-3 font-semibold">File Name</th>
-                  <th className="px-6 py-3 font-semibold">Deleted By</th>
                   <th className="px-6 py-3 font-semibold">Deleted On</th>
                   <th className="px-6 py-3 font-semibold text-center">Actions</th>
                 </tr>
@@ -134,7 +133,6 @@ export default function Archives() {
                       <td className="px-6 py-4 whitespace-nowrap text-gray-800 max-w-xs truncate">
                         {archive.file_name}
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{archive.deleted_by}</td>
                       <td className="px-6 py-4 text-gray-600">
                         {new Date(archive.deleted_at).toLocaleString()}
                       </td>
