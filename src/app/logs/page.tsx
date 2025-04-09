@@ -185,12 +185,12 @@ const Logs = () => {
                           >
                             View
                           </button>
-                          <button
+                          {/* <button
                             onClick={() => handleDelete(image.id)}
                             className="text-red-600 hover:underline"
                           >
                             Delete
-                          </button>
+                          </button> */}
                         </td>
                       </tr>
                     ))}
