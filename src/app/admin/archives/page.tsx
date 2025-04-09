@@ -65,30 +65,30 @@ export default function Archives() {
     }
   };
 
-  const handleDelete = async (id: string, file_name: string) => {
-    const confirmed = window.confirm(`Are you sure you want to permanently delete "${file_name}"?`);
-    if (!confirmed) return;
+  // const handleDelete = async (id: string, file_name: string) => {
+  //   const confirmed = window.confirm(`Are you sure you want to permanently delete "${file_name}"?`);
+  //   if (!confirmed) return;
 
-    setProcessingId(id);
-    try {
-      await axios.post(
-        "/api/recycle-bin",
-        {
-          action: "delete",
-          file_id: id,
-          username: "admin_user", // ✅ Hardcoded fallback username
-        },
-        { withCredentials: true }
-      );
-      alert(`"${file_name}" has been permanently deleted.`);
-      fetchArchives();
-    } catch (err) {
-      console.error("Delete error:", err);
-      alert("Failed to delete the file.");
-    } finally {
-      setProcessingId(null);
-    }
-  };
+  //   setProcessingId(id);
+  //   try {
+  //     await axios.post(
+  //       "/api/recycle-bin",
+  //       {
+  //         action: "delete",
+  //         file_id: id,
+  //         username: "admin_user", // ✅ Hardcoded fallback username
+  //       },
+  //       { withCredentials: true }
+  //     );
+  //     alert(`"${file_name}" has been permanently deleted.`);
+  //     fetchArchives();
+  //   } catch (err) {
+  //     console.error("Delete error:", err);
+  //     alert("Failed to delete the file.");
+  //   } finally {
+  //     setProcessingId(null);
+  //   }
+  // };
 
   const SkeletonTableRow = () => (
     <tr>
@@ -153,7 +153,7 @@ export default function Archives() {
                         >
                           {processingId === archive.id ? "Processing..." : "Restore"}
                         </button>
-                        <button
+                        {/* <button
                           className={`text-red-600 hover:underline font-medium ${
                             processingId === archive.id ? "opacity-50 pointer-events-none" : ""
                           }`}
@@ -161,7 +161,7 @@ export default function Archives() {
                           disabled={processingId === archive.id}
                         >
                           {processingId === archive.id ? "Processing..." : "Delete"}
-                        </button>
+                        </button> */}
                       </td>
                     </tr>
                   ))
