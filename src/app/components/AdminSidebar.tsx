@@ -15,6 +15,8 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 import axios from "axios";
+import AdminProfileCard from './AdminProfile';
+
 
 // Skeleton Sidebar Loader
 const SkeletonSidebar = ({ isCollapsed }: { isCollapsed: boolean }) => {
@@ -105,13 +107,11 @@ const Sidebar: React.FC = () => {
       </button>
 
       {user ? (
-        <div className="mb-6 text-center">
-          <h2 className="text-lg font-semibold text-gray-800">{user.username}</h2>
-          <p className="text-sm text-gray-500">{user.position}</p>
-        </div>
-      ) : (
-        <p className="text-sm text-gray-500 text-center">{error}</p>
-      )}
+  <AdminProfileCard admin={user} isCollapsed={isCollapsed} error={error} />
+) : (
+  <p className="text-sm text-gray-500 text-center">{error}</p>
+)}
+
 
       <nav className="flex-grow mt-4">
         <ul className="space-y-4">

@@ -19,6 +19,7 @@ interface AdminRow extends RowDataPacket {
   email: string;
   role: string;
   position: string;
+  profile_picture: string | null;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -37,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const decoded = jwt.verify(token, SECRET_KEY) as JwtPayload;
 
     const [admins] = await pool.query<AdminRow[]>(
-      "SELECT admin_id, username, email, role, position FROM admin_accounts WHERE admin_id = ?",
+      "SELECT admin_id, username, email, role, position, profile_picture FROM admin_accounts WHERE admin_id = ?",
       [decoded.adminId]
     );
 
@@ -45,7 +46,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: "Admin not found" });
     }
 
-    res.status(200).json({ user: admins[0] });
+    const admin = admins[0];
+
+    res.status(200).json({
+      user: {
+        id: admin.admin_id,
+        username: admin.username,
+        email: admin.email,
+        role: admin.role,
+        position: admin.position,
+        profilePicture: admin.profile_picture || null,
+      },
+    });
   } catch (error) {
     console.error("Error fetching admin user:", error);
     res.status(401).json({ error: "Invalid or expired token" });

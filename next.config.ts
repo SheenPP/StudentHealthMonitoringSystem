@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["srtpakjpnnmtgumqiujf.supabase.co"], // Replace with your actual Supabase domain
+    domains: ['i.pravatar.cc',"srtpakjpnnmtgumqiujf.supabase.co"], 
   },
 };
 
