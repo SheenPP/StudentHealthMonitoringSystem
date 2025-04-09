@@ -71,16 +71,16 @@ const Logs = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await axios.delete(`/api/logs/${id}`, {
-        withCredentials: true,
-      });
-      fetchLogs();
-    } catch (err) {
-      console.error("Delete failed:", err);
-    }
-  };
+  // const handleDelete = async (id: string) => {
+  //   try {
+  //     await axios.delete(`/api/logs/${id}`, {
+  //       withCredentials: true,
+  //     });
+  //     fetchLogs();
+  //   } catch (err) {
+  //     console.error("Delete failed:", err);
+  //   }
+  // };
 
   const sortedImages = [...images].sort((a, b) =>
     sortState.order === "asc"

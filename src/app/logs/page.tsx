@@ -77,15 +77,15 @@ const Logs = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      const res = await fetch(`/api/logs/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
-      await fetchLogs();
-    } catch (err) {
-      console.error("Delete failed:", err);
-    }
-  };
+  // const handleDelete = async (id: string) => {
+  //   try {
+  //     const res = await fetch(`/api/logs/${id}`, { method: "DELETE" });
+  //     if (!res.ok) throw new Error("Failed to delete");
+  //     await fetchLogs();
+  //   } catch (err) {
+  //     console.error("Delete failed:", err);
+  //   }
+  // };
 
   const sortedImages = [...images].sort((a, b) =>
     sortState.order === "asc"
