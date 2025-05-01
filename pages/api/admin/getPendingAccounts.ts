@@ -5,12 +5,18 @@ import { parse } from "cookie";
 
 const SECRET_KEY = process.env.JWT_SECRET || "your_secret_key";
 
+interface PendingAccount {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Extract token from cookies instead of Authorization header
   const cookies = parse(req.headers.cookie || "");
   const token = cookies.adminAuthToken;
 
@@ -21,10 +27,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     jwt.verify(token, SECRET_KEY);
 
-    // Fetch all pending accounts
-    const [students] = await pool.query(
-      "SELECT student_id AS id, CONCAT(first_name, ' ', last_name) AS name, email FROM studentaccount WHERE status = 'pending'"
+    // Get both students and teachers from unified 'accounts' table
+    const [accounts] = await pool.query(
+      `
+      SELECT 
+        id, 
+        CONCAT(first_name, ' ', last_name) AS name, 
+        email,
+        role
+      FROM accounts 
+      WHERE status = 'pending' 
+        AND role IN ('student', 'teacher')
+      `
     );
+
+    // Keep these legacy queries (optional, might be removed later)
     const [users] = await pool.query(
       "SELECT id, CONCAT(firstname, ' ', lastname) AS name, email FROM users WHERE status = 'pending'"
     );
@@ -32,9 +49,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       "SELECT admin_id AS id, username AS name, email FROM admin_accounts WHERE status = 'pending'"
     );
 
-    res.status(200).json({ students, users, admins });
+    res.status(200).json({ accounts, users, admins });
   } catch (error) {
-    console.error("Error fetching pending accounts:", error);
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Error fetching pending accounts:", error);
+    }
     res.status(500).json({ error: "Server error" });
   }
 }

@@ -11,8 +11,10 @@ import {
   AcademicCapIcon,
   CalendarIcon,
   ArrowPathIcon,
+  PresentationChartBarIcon,
 } from "@heroicons/react/24/outline";
 import useAdminAuth from "../../hooks/useAdminAuth";
+import { useSchoolTerm } from "../../context/SchoolTermContext";
 
 interface Stats {
   pending: number;
@@ -29,10 +31,12 @@ interface StatCardProps {
 
 export default function AdminDashboard() {
   const { authChecked, loading: authLoading } = useAdminAuth();
+  const { selectedTerm } = useSchoolTerm();
   const [appointmentStats, setAppointmentStats] = useState<Stats>({ pending: 0, approved: 0, rejected: 0 });
   const [userStats, setUserStats] = useState<Stats>({ pending: 0, approved: 0, rejected: 0 });
   const [userOnly, setUserOnly] = useState<Stats>({ pending: 0, approved: 0, rejected: 0 });
   const [studentOnly, setStudentOnly] = useState<Stats>({ pending: 0, approved: 0, rejected: 0 });
+  const [teacherOnly, setTeacherOnly] = useState<Stats>({ pending: 0, approved: 0, rejected: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
   const router = useRouter();
 
@@ -40,6 +44,7 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
       try {
         const response = await axios.get("/api/admin/stats", {
+          params: { term_id: selectedTerm?.id },
           withCredentials: true,
         });
 
@@ -47,6 +52,7 @@ export default function AdminDashboard() {
         setUserStats(response.data.userStats);
         setUserOnly(response.data.userOnly);
         setStudentOnly(response.data.studentOnly);
+        setTeacherOnly(response.data.teacherOnly);
       } catch (err) {
         console.error("Error fetching statistics:", err);
       } finally {
@@ -54,10 +60,10 @@ export default function AdminDashboard() {
       }
     };
 
-    if (authChecked) {
+    if (authChecked && selectedTerm) {
       fetchStats();
     }
-  }, [authChecked]);
+  }, [authChecked, selectedTerm]);
 
   const StatCard = ({ title, icon: Icon, stats, color }: StatCardProps) => (
     <div className="p-6 bg-white border border-gray-200 rounded-xl shadow hover:shadow-lg transition-all duration-300">
@@ -136,9 +142,10 @@ export default function AdminDashboard() {
           <h2 className="text-lg font-semibold mt-10 mb-4 text-gray-700 flex items-center gap-2">
             <UserGroupIcon className="w-5 h-5" /> Users Overview
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {showSkeleton ? (
               <>
+                <SkeletonCard />
                 <SkeletonCard />
                 <SkeletonCard />
                 <SkeletonCard />
@@ -147,6 +154,7 @@ export default function AdminDashboard() {
               <>
                 <StatCard title="Admin Users" icon={UserIcon} stats={userOnly} color="text-purple-500" />
                 <StatCard title="Students" icon={AcademicCapIcon} stats={studentOnly} color="text-pink-500" />
+                <StatCard title="Teachers" icon={PresentationChartBarIcon} stats={teacherOnly} color="text-orange-500" />
                 <StatCard title="Total Users" icon={UserGroupIcon} stats={userStats} color="text-indigo-500" />
               </>
             )}

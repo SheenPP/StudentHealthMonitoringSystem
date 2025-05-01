@@ -17,16 +17,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   console.log("📧 Requested email:", email);
 
   try {
-    const [rows] = await pool.query<StudentRow[]>("SELECT * FROM studentaccount WHERE email = ?", [email]);
+    const [rows] = await pool.query<StudentRow[]>("SELECT * FROM accounts WHERE email = ?", [email]);
     console.log("🔎 Found users:", rows);
 
     if (rows.length === 0) return res.status(404).json({ error: "Email not found" });
 
     const token = crypto.randomBytes(32).toString("hex");
-    const resetLink = `${process.env.BASE_URL}/student/reset-password/${token}`;
+    const resetLink = `${process.env.BASE_URL}/user/reset-password/${token}`;
     console.log("🔗 Generated reset link:", resetLink);
 
-    await pool.query("UPDATE studentaccount SET reset_token = ? WHERE email = ?", [token, email]);
+    await pool.query("UPDATE accounts SET reset_token = ? WHERE email = ?", [token, email]);
     console.log("✅ Token saved to database");
 
     const transporter = nodemailer.createTransport({

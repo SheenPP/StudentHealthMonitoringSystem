@@ -7,10 +7,10 @@ import Link from "next/link";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
 
 const MAX_ATTEMPTS = 5;
-const COOLDOWN_TIME = 3 * 60 * 1000; // 3 minutes
+const COOLDOWN_TIME = 3 * 60 * 1000; // 3 minutes in ms
 
 const StudentLogin = () => {
-  const [identifier, setIdentifier] = useState("");
+  const [email, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -21,44 +21,48 @@ const StudentLogin = () => {
 
   useEffect(() => {
     const lastAttempt = localStorage.getItem("lastLoginAttempt");
-    if (lastAttempt && Date.now() - parseInt(lastAttempt) < COOLDOWN_TIME) {
-      setIsLocked(true);
-      const timeLeft = COOLDOWN_TIME - (Date.now() - parseInt(lastAttempt));
-      setTimeout(() => {
-        setIsLocked(false);
-        setAttempts(0);
+    if (lastAttempt) {
+      const diff = Date.now() - parseInt(lastAttempt);
+      if (diff < COOLDOWN_TIME) {
+        setIsLocked(true);
+        const timeLeft = COOLDOWN_TIME - diff;
+        const timeout = setTimeout(() => {
+          setIsLocked(false);
+          setAttempts(0);
+          localStorage.removeItem("lastLoginAttempt");
+        }, timeLeft);
+        return () => clearTimeout(timeout);
+      } else {
         localStorage.removeItem("lastLoginAttempt");
-      }, timeLeft);
+      }
     }
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
     if (isLocked) {
-      setError("Too many failed attempts. Please wait 3 minutes before trying again.");
-      setLoading(false);
+      setError("Too many failed attempts. Please wait before trying again.");
       return;
     }
 
+    setLoading(true);
     try {
       await axios.post(
-        "/api/auth/studentlogin",
-        { identifier, password },
+        "/api/auth/userlogin",
+        { email, password },
         { withCredentials: true }
       );
 
       setAttempts(0);
       localStorage.removeItem("lastLoginAttempt");
-      router.push("/student/dashboard");
+      router.push("/user/dashboard");
     } catch (err: unknown) {
-      let errorMessage = "Invalid credentials or account not approved.";
+      let errorMessage = "Login failed. Please try again.";
       if (axios.isAxiosError(err)) {
         errorMessage = err.response?.data?.error || errorMessage;
       }
-      setError(errorMessage);
 
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
@@ -66,8 +70,10 @@ const StudentLogin = () => {
       if (newAttempts >= MAX_ATTEMPTS) {
         setIsLocked(true);
         localStorage.setItem("lastLoginAttempt", Date.now().toString());
-        setError("Too many failed attempts. Please try again in 3 minutes.");
+        errorMessage = "Too many failed attempts. Please try again in 3 minutes.";
       }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -77,21 +83,21 @@ const StudentLogin = () => {
     <div className="flex flex-col items-center justify-center p-6 sm:p-8">
       <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-lg">
         <h2 className="text-xl sm:text-2xl text-black font-semibold mb-6 text-center">
-          Student Login
+          User Login
         </h2>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label htmlFor="identifier" className="block text-sm font-medium text-gray-700">
-              Student ID or Email
+              Email
             </label>
             <input
-              type="text"
+              type="email"
               id="identifier"
-              value={identifier}
+              value={email}
               onChange={(e) => setIdentifier(e.target.value)}
               required
-              disabled={isLocked}
+              disabled={isLocked || loading}
               className="mt-1 p-2 w-full border text-black border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -106,8 +112,9 @@ const StudentLogin = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={isLocked}
+              disabled={isLocked || loading}
               className="mt-1 p-2 w-full border text-black border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 pr-10"
+              aria-disabled={isLocked}
             />
             <button
               type="button"
@@ -121,7 +128,7 @@ const StudentLogin = () => {
 
           {attempts > 0 && !isLocked && (
             <p className="text-yellow-500 text-sm text-center">
-              Warning: {MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts !== 1 && "s"} left before lockout.
+              {MAX_ATTEMPTS - attempts} attempt{MAX_ATTEMPTS - attempts !== 1 && "s"} left before lockout.
             </p>
           )}
 
@@ -130,25 +137,23 @@ const StudentLogin = () => {
           <button
             type="submit"
             disabled={loading || isLocked}
-            className={`w-full py-2 mt-4 ${
-              isLocked
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600"
-            } text-white rounded-md focus:ring-2 focus:ring-blue-500`}
+            className={`w-full py-2 mt-4 text-white rounded-md focus:ring-2 focus:ring-blue-500 ${
+              isLocked ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
+            }`}
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <p className="text-sm text-black">
-            <Link href="/student/forgot-password" className="text-blue-500 hover:underline">
+        <div className="mt-4 text-center text-sm text-black">
+          <p>
+            <Link href="/user/forgot-password" className="text-blue-500 hover:underline">
               Forgot Password?
             </Link>
           </p>
-          <p className="text-sm text-black mt-2">
+          <p className="mt-2">
             Don&rsquo;t have an account?{" "}
-            <Link href="/student/register" className="text-blue-500 hover:underline">
+            <Link href="/user/register" className="text-blue-500 hover:underline">
               Register here
             </Link>
           </p>

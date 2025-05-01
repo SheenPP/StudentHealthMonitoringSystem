@@ -19,8 +19,9 @@ import { FiX, FiUsers } from "react-icons/fi";
 import { CalendarDays } from "lucide-react";
 import useAuth from "../hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useSchoolTerm } from "../context/SchoolTermContext";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -63,6 +64,7 @@ interface DashboardData {
 
 const Dashboard = () => {
   const { user, authChecked } = useAuth();
+  const { selectedTerm } = useSchoolTerm();
   const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -75,7 +77,12 @@ const Dashboard = () => {
     approved: 0,
     rejected: 0,
   });
-  const [visitDates, setVisitDates] = useState<{ title: string; start: string; backgroundColor?: string; borderColor?: string; reason?: string }[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("All");
+  const [selectedCourse, setSelectedCourse] = useState("All");
+  const [selectedYear, setSelectedYear] = useState("All");
+  const [visitDates, setVisitDates] = useState<
+    { title: string; start: string; backgroundColor?: string; borderColor?: string; reason?: string }[]
+  >([]);
   const [modalType, setModalType] = useState<"event" | "add-patient" | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<{ title: string; start: string; reason?: string } | null>(null);
 
@@ -86,74 +93,121 @@ const Dashboard = () => {
   }, [authChecked, user, router]);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    if (!authChecked || !selectedTerm) return;
+
+    const safeJson = async (res: Response) => {
+      const text = await res.text();
       try {
-        const statsRes = await fetch("/api/admin/stats");
-        const statsData = await statsRes.json();
-        setAppointmentStats(statsData.appointmentStats);
-      } catch (error) {
-        console.error("Error fetching stats:", error);
-      }
-    };
-
-    const fetchHealthRecords = async () => {
-      try {
-        const res = await fetch("/api/healthRecords");
-        const data: DashboardData = await res.json();
-        setDashboardData(data);
-
-        const patientVisits = data.patientData.map((item) => ({
-          title: "Patient Visit",
-          start: item.date_of_visit,
-          backgroundColor: "#3b82f6",
-          borderColor: "#2563eb",
-        }));
-
-        setVisitDates((prev) => [...prev, ...patientVisits]);
-      } catch (error) {
-        console.error("Error fetching health records:", error);
-      }
-    };
-
-    const fetchAppointments = async () => {
-      try {
-        const res = await fetch("/api/appointments");
-        const data: AppointmentRecord[] = await res.json();
-
-        const approvedAppointments = data.filter((appt) => appt.status?.toLowerCase() === "approved");
-
-        const appointmentEvents = approvedAppointments.map((appt) => {
-          const formattedDate = new Date(appt.date).toISOString().split("T")[0];
-          return {
-            title: `Appointment - ${appt.first_name} ${appt.last_name}`,
-            start: formattedDate,
-            reason: appt.reason,
-            backgroundColor: "#22c55e",
-            borderColor: "#16a34a",
-          };
-        });
-
-        setVisitDates((prev) => [...prev, ...appointmentEvents]);
-      } catch (error) {
-        console.error("Error fetching appointments:", error);
+        return JSON.parse(text);
+      } catch {
+        console.error("Invalid JSON response:", text);
+        return null;
       }
     };
 
     const fetchAll = async () => {
-      setIsLoading(true);
-      await Promise.all([fetchStats(), fetchHealthRecords(), fetchAppointments()]);
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+
+        const [statsRes, recordsRes, appointmentsRes] = await Promise.all([
+          fetch(`/api/admin/stats?term_id=${selectedTerm.id}`),
+          fetch(`/api/healthRecords?term_id=${selectedTerm.id}`),
+          fetch(`/api/appointments?term_id=${selectedTerm.id}`),
+        ]);
+
+        const statsData = await safeJson(statsRes);
+        const recordsData: DashboardData | null = await safeJson(recordsRes);
+        const appointmentsData: AppointmentRecord[] | null = await safeJson(appointmentsRes);
+
+        if (!statsData || !recordsData || !appointmentsData) {
+          toast.error("Failed to load one or more dashboard datasets.");
+          return;
+        }
+
+        setAppointmentStats(statsData.appointmentStats || statsData);
+        setDashboardData(recordsData);
+
+        if (!recordsData.patientData || recordsData.patientData.length === 0) {
+          toast.info("No patient records found for this term.");
+        }
+
+        const approvedAppointments = Array.isArray(appointmentsData)
+          ? appointmentsData.filter((appt) => appt.status.toLowerCase() === "approved")
+          : [];
+
+        if (approvedAppointments.length === 0) {
+          toast.info("No approved appointments found for this term.");
+        }
+
+        const patientVisits = Array.isArray(recordsData.patientData)
+          ? recordsData.patientData.map((item) => ({
+              title: "Patient Visit",
+              start: item.date_of_visit,
+              backgroundColor: "#3b82f6",
+              borderColor: "#2563eb",
+            }))
+          : [];
+
+        const appointmentEvents = approvedAppointments.map((appt) => ({
+          title: `Appointment - ${appt.first_name} ${appt.last_name}`,
+          start: new Date(appt.date).toISOString().split("T")[0],
+          reason: appt.reason,
+          backgroundColor: "#22c55e",
+          borderColor: "#16a34a",
+        }));
+
+        setVisitDates([...patientVisits, ...appointmentEvents]);
+      } catch (err) {
+        console.error("Error loading dashboard:", err);
+        toast.error("Failed to load dashboard data.");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchAll();
-  }, []);
+  }, [authChecked, selectedTerm]);
+
+  const filteredPatientData = dashboardData.patientData.filter((item) => {
+    return (
+      (selectedDepartment === "All" || item.department === selectedDepartment) &&
+      (selectedCourse === "All" || item.course === selectedCourse) &&
+      (selectedYear === "All" || item.year === selectedYear)
+    );
+  });
 
   const chartData = {
-    labels: dashboardData.patientData.map((item) => `${item.department} - ${item.course} - ${item.year}`),
-    datasets: [
+    labels: filteredPatientData.map((item) => {
+      const courseAcronymMap: Record<string, string> = {
+        "Bachelor of Elementary Education": "BEEd",
+        "Bachelor of Secondary Education major in English": "BSEd-English",
+        "Bachelor of Secondary Education major in Mathematics": "BSEd-Math",
+        "Bachelor of Science in Computer Science": "BSCS",
+        "Bachelor of Science in Industrial Technology major in Food Preparation and Services Technology": "BSIT-FPST",
+        "Bachelor of Science in Industrial Technology major in Electrical Technology": "BSIT-ET",
+        "Bachelor of Science in Midwifery": "BSMid",
+        "Bachelor of Science in Fisheries": "BSFish",
+      };
+    
+      const departmentAcronymMap: Record<string, string> = {
+        "College of Teacher Education": "CTE",
+        "College of Technology": "CT",
+        "College of Midwifery": "CM",
+        "College of Fisheries": "CF",
+      };
+    
+      const deptAcronym = departmentAcronymMap[item.department] || item.department;
+      const courseAcronym = courseAcronymMap[item.course] || item.course;
+      const yearAcronym = item.year.replace(/[^0-9]/g, "") + "Y";
+    
+      return `${deptAcronym}-${courseAcronym}-${yearAcronym}`;
+    }),
+    
+    
+        datasets: [
       {
         label: "Patients Treated",
-        data: dashboardData.patientData.map((item) => item.patients_treated),
+        data: filteredPatientData.map((item) => item.patients_treated),
         backgroundColor: "rgba(99, 179, 237, 0.6)",
         borderColor: "rgba(26, 140, 216, 1)",
         borderWidth: 1,
@@ -163,7 +217,6 @@ const Dashboard = () => {
 
   return (
     <div className="flex-1 bg-gray-50 min-h-screen">
-      <ToastContainer position="top-right" autoClose={3000} />
       <Header />
       <div className="flex">
         <Sidebar />
@@ -181,23 +234,16 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {/* Stat Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {isLoading ? (
-              <>
-                <div className="bg-white p-6 rounded-lg shadow-md animate-pulse">
-                  <div className="h-5 w-1/2 bg-gray-300 rounded mb-4" />
-                  <div className="h-10 w-3/4 bg-gray-200 rounded" />
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md animate-pulse">
-                  <div className="h-5 w-1/2 bg-gray-300 rounded mb-4" />
-                  <div className="h-10 w-3/4 bg-gray-200 rounded" />
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md animate-pulse">
-                  <div className="h-5 w-1/2 bg-gray-300 rounded mb-4" />
-                  <div className="h-10 w-3/4 bg-gray-200 rounded" />
-                </div>
-              </>
+              Array(3)
+                .fill(0)
+                .map((_, i) => (
+                  <div key={i} className="bg-white p-6 rounded-lg shadow-md animate-pulse">
+                    <div className="h-5 w-1/2 bg-gray-300 rounded mb-4" />
+                    <div className="h-10 w-3/4 bg-gray-200 rounded" />
+                  </div>
+                ))
             ) : (
               <>
                 <div className="bg-white p-6 rounded-lg shadow-md flex items-center">
@@ -229,7 +275,6 @@ const Dashboard = () => {
             )}
           </div>
 
-          {/* Calendar & Chart */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <PatientVisitCalendar
               visitDates={visitDates}
@@ -242,17 +287,39 @@ const Dashboard = () => {
                 setModalType("event");
               }}
             />
+
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-4">
                 Patients Treated by Department, Course, and Year
               </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <select value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)} className="p-2 border rounded">
+                  <option value="All">All Departments</option>
+                  {[...new Set(dashboardData.patientData.map((p) => p.department))].map((dep) => (
+                    <option key={dep} value={dep}>{dep}</option>
+                  ))}
+                </select>
+                <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)} className="p-2 border rounded">
+                  <option value="All">All Courses</option>
+                  {[...new Set(dashboardData.patientData.map((p) => p.course))].map((course) => (
+                    <option key={course} value={course}>{course}</option>
+                  ))}
+                </select>
+                <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="p-2 border rounded">
+                  <option value="All">All Years</option>
+                  {[...new Set(dashboardData.patientData.map((p) => p.year))].map((year) => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="h-96">
-                <Bar data={chartData} options={{ responsive: true }} />
+                <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />
               </div>
             </div>
           </div>
 
-          {/* Event Modal */}
           {modalType === "event" && selectedEvent && (
             <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
               <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative animate-fadeIn">
@@ -266,27 +333,15 @@ const Dashboard = () => {
                   <FiX size={20} />
                 </button>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">Event Details</h3>
-                <p className="text-gray-600">
-                  <span className="font-medium">Title:</span> {selectedEvent.title}
-                </p>
-                <p className="text-gray-600">
-                  <span className="font-medium">Date:</span>{" "}
-                  {new Date(selectedEvent.start).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
+                <p className="text-gray-600"><span className="font-medium">Title:</span> {selectedEvent.title}</p>
+                <p className="text-gray-600"><span className="font-medium">Date:</span> {new Date(selectedEvent.start).toLocaleDateString()}</p>
                 {selectedEvent.reason && (
-                  <p className="text-gray-600">
-                    <span className="font-medium">Reason:</span> {selectedEvent.reason}
-                  </p>
+                  <p className="text-gray-600"><span className="font-medium">Reason:</span> {selectedEvent.reason}</p>
                 )}
               </div>
             </div>
           )}
 
-          {/* Add Patient Modal */}
           {modalType === "add-patient" && (
             <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center">
               <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl relative animate-fadeIn">

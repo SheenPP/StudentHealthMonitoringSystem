@@ -7,15 +7,15 @@ type AppointmentApproval = {
   user_approval: string;
 };
 
-// ✅ GET - Fetch all appointments
+// ✅ GET - Fetch all appointments with user details
 export async function GET() {
   try {
     const [appointments] = await db.query(`
       SELECT 
         a.id, 
-        a.student_id, 
-        s.first_name, 
-        s.last_name, 
+        a.user_id, 
+        acc.first_name, 
+        acc.last_name, 
         a.date, 
         a.time, 
         a.reason, 
@@ -25,7 +25,7 @@ export async function GET() {
         a.created_at, 
         a.updated_at
       FROM appointments a
-      LEFT JOIN studentaccount s ON a.student_id = s.student_id
+      LEFT JOIN accounts acc ON a.user_id = acc.user_id
     `);
 
     return NextResponse.json(appointments, { status: 200 });
@@ -39,18 +39,18 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const id = url.pathname.split("/").pop(); // Extract ID from URL
+    const id = url.pathname.split("/").pop(); // Extract appointment ID
 
     if (!id) {
       return NextResponse.json({ error: "Missing appointment ID" }, { status: 400 });
     }
 
     const { admin_approval } = await req.json();
+
     if (!admin_approval) {
       return NextResponse.json({ error: "Missing admin approval status" }, { status: 400 });
     }
 
-    // ✅ Correctly typed DB query result
     const [rows] = await db.query<AppointmentApproval[] & RowDataPacket[]>(
       "SELECT admin_approval, user_approval FROM appointments WHERE id = ?",
       [id]

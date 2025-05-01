@@ -91,7 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const file_id = Array.isArray(fields.file_id) ? fields.file_id[0] : fields.file_id;
-      const student_id = Array.isArray(fields.student_id) ? fields.student_id[0] : fields.student_id;
+      const user_id = Array.isArray(fields.user_id) ? fields.user_id[0] : fields.user_id;
       const consultation_type = Array.isArray(fields.consultation_type)
         ? fields.consultation_type[0]
         : fields.consultation_type;
@@ -120,9 +120,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       await pool.query<OkPacket>(
-        `INSERT INTO file_history (file_id, student_id, action, user, timestamp, file_name, consultation_type)
+        `INSERT INTO file_history (file_id, user_id, action, user, timestamp, file_name, consultation_type)
          VALUES (?, ?, 'Moved to Recycle Bin', ?, ?, ?, ?)`,
-        [file_id, student_id, username, deletedAt, file.file_name, consultation_type]
+        [file_id, user_id, username, deletedAt, file.file_name, consultation_type]
       );
 
       await pool.query<OkPacket>(

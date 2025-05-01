@@ -1,6 +1,4 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 
 interface FileAction {
   action: string;
@@ -10,20 +8,19 @@ interface FileAction {
 }
 
 interface ClinicHistoryProps {
-  studentId: string | undefined;
-  onHistoryUpdated?: () => void;
+  id: string | undefined; // Use `id` instead of `userId`
 }
 
 const ITEMS_PER_PAGE = 5;
 
-const ClinicHistory: React.FC<ClinicHistoryProps> = ({ studentId, onHistoryUpdated }) => {
+const ClinicHistory: React.FC<ClinicHistoryProps> = ({ id }) => {
   const [history, setHistory] = useState<FileAction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   useEffect(() => {
-    if (!studentId) {
+    if (!id) {
       setHistory([]);
       setLoading(false);
       return;
@@ -33,7 +30,7 @@ const ClinicHistory: React.FC<ClinicHistoryProps> = ({ studentId, onHistoryUpdat
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/history?student_id=${studentId}`);
+        const response = await fetch(`/api/history?id=${id}`); // Use `id` in query string
         if (response.ok) {
           const data = await response.json();
           setHistory(data);
@@ -43,7 +40,7 @@ const ClinicHistory: React.FC<ClinicHistoryProps> = ({ studentId, onHistoryUpdat
         }
       } catch (err: unknown) {
         const message =
-          err instanceof Error ? err.message : "An error occurred while fetching history.";
+          err instanceof Error ? err.message : 'An error occurred while fetching history.';
         setError(message);
       } finally {
         setLoading(false);
@@ -51,7 +48,7 @@ const ClinicHistory: React.FC<ClinicHistoryProps> = ({ studentId, onHistoryUpdat
     };
 
     fetchHistory();
-  }, [studentId, onHistoryUpdated]);
+  }, [id]);
 
   const totalPages = Math.ceil(history.length / ITEMS_PER_PAGE);
   const paginatedData = history.slice(
@@ -67,7 +64,7 @@ const ClinicHistory: React.FC<ClinicHistoryProps> = ({ studentId, onHistoryUpdat
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
 
-  if (!studentId) {
+  if (!id) {
     return (
       <div className="p-4 text-gray-700 text-center">
         Select a student to view history.

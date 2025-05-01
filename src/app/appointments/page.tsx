@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import useAuth from "../hooks/useAuth";
 import { toast, ToastContainer } from "react-toastify";
+import { useSchoolTerm } from "../context/SchoolTermContext";
 import "react-toastify/dist/ReactToastify.css";
 
 interface Appointment {
@@ -58,44 +59,49 @@ const SkeletonTable = () => (
 export default function UserAppointments() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState<boolean>(true);
+  const [statusFilter, setStatusFilter] = useState("pending");
 
   const { user, authChecked, loading: authLoading } = useAuth();
+  const { selectedTerm } = useSchoolTerm();
   const router = useRouter();
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
 
   const fetchAppointments = useCallback(async () => {
+    if (!selectedTerm) return;
+
     try {
-      const response = await axios.get<Appointment[]>("/api/appointments", {
-        withCredentials: true,
-      });
+      const response = await axios.get<Appointment[]>(
+        `/api/appointments?term_id=${selectedTerm.id}&status=${statusFilter}`,
+        { withCredentials: true }
+      );
       setAppointments(response.data);
     } catch (err) {
       console.error("Error fetching appointments:", err);
     } finally {
       setAppointmentsLoading(false);
     }
-  }, []);
+  }, [selectedTerm, statusFilter]);
 
   useEffect(() => {
     if (authChecked && !user) {
       router.push("/");
-    } else if (authChecked && user) {
+    } else if (authChecked && user && selectedTerm) {
       fetchAppointments();
-  
+
       axios.post("/api/appointment/mark-all-seen").catch((err) => {
         console.error("Failed to mark appointments as seen:", err);
       });
     }
-  }, [authChecked, user, fetchAppointments, router]);
-  
+  }, [authChecked, user, selectedTerm, fetchAppointments]);
+
   const handleMarkAsDone = async () => {
     if (!selectedAppointmentId) return;
 
     try {
-        await axios.put("/api/appointment/mark-done", { id: selectedAppointmentId });
-        setAppointments((prev) =>
+      await axios.put("/api/appointment/mark-done", { id: selectedAppointmentId });
+      setAppointments((prev) =>
         prev.map((appt) =>
           appt.id === selectedAppointmentId ? { ...appt, status: "done" } : appt
         )
@@ -115,7 +121,7 @@ export default function UserAppointments() {
       <div className="flex h-screen bg-gray-100">
         <Sidebar />
         <div className="flex-1 p-8">
-          <h1 className="text-3xl font-semibold text-gray-800">My Appointments</h1>
+          <h1 className="text-3xl font-semibold text-gray-800">Appointments</h1>
           <p className="mt-2 text-gray-600">Loading appointment data...</p>
           <SkeletonTable />
         </div>
@@ -128,9 +134,25 @@ export default function UserAppointments() {
       <Sidebar />
       <div className="flex-1 p-8">
         <ToastContainer position="top-right" autoClose={3000} />
-        <h1 className="text-3xl font-semibold text-gray-800">My Appointments</h1>
-        <p className="mt-2 text-gray-600">View your scheduled consultations.</p>
+        <h1 className="text-3xl font-semibold text-gray-800">Appointments</h1>
+        <p className="mt-2 text-gray-600">View scheduled consultations.</p>
 
+        {/* 🔍 Filter */}
+        <div className="mt-4">
+          <label className="mr-2 text-sm text-gray-700">Filter:</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          >
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="done">Done</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+
+        {/* 📅 Appointments Table */}
         <div className="mt-6 bg-white shadow-md rounded-lg p-6 border border-gray-300 overflow-x-auto">
           <table className="w-full border-collapse min-w-[700px]">
             <thead>
@@ -180,6 +202,13 @@ export default function UserAppointments() {
                   </td>
                 </tr>
               ))}
+              {appointments.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="text-center text-gray-500 py-6">
+                    No appointments found for the current filter and term.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -38,7 +38,7 @@ export default function Archives() {
 
   useEffect(() => {
     if (authChecked && !user) {
-      router.push("/");
+      router.push("/admin/login");
     } else if (authChecked) {
       fetchArchives();
     }

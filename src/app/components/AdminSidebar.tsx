@@ -8,6 +8,7 @@ import {
   FiFileText,
   FiCalendar,
   FiArchive,
+  FiSettings,
   FiBookOpen,
   FiUser,
   FiChevronLeft,
@@ -133,7 +134,7 @@ const Sidebar: React.FC = () => {
           <SidebarItem
             href="/admin/student-profile"
             icon={<FiUser size={20} />}
-            text="Student Profiles"
+            text="Student Profile"
             isCollapsed={isCollapsed}
             active={pathname === "/admin/student-profile"}
           />
@@ -147,11 +148,11 @@ const Sidebar: React.FC = () => {
           />
           <hr className="border-gray-300 my-4" />
           <SidebarItem
-            href="/admin/logs"
+            href="/admin/visits"
             icon={<FiBookOpen size={20} />}
-            text="Logs"
+            text="Visits"
             isCollapsed={isCollapsed}
-            active={pathname === "/admin/logs"}
+            active={pathname === "/admin/visits"}
           />
           <SidebarItem
             href="/admin/archives"
@@ -166,6 +167,13 @@ const Sidebar: React.FC = () => {
             text="Accounts"
             isCollapsed={isCollapsed}
             active={pathname === "/admin/accounts"}
+          />
+          <SidebarItem
+            href="/admin/settings"
+            icon={<FiSettings size={20} />}
+            text="Settings"
+            isCollapsed={isCollapsed}
+            active={pathname === "/admin/settings"}
           />
         </ul>
       </nav>

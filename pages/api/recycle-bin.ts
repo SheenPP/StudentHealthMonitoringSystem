@@ -9,7 +9,7 @@ interface RecycleFileRow extends RowDataPacket {
   file_path: string;
   deleted_by: string | null;
   deleted_at: string | null;
-  student_id: string;
+  user_id: string;
   consultation_type: string;
 }
 
@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     if (req.method === 'GET') {
       const [archives] = await db.query<RecycleFileRow[]>(
-        `SELECT id, file_name, file_path, deleted_by, deleted_at, student_id, consultation_type
+        `SELECT id, file_name, file_path, deleted_by, deleted_at, user_id, consultation_type
          FROM files
          WHERE recycle_bin = 1
          ORDER BY deleted_at DESC`
@@ -64,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const file = fileResult[0];
-      const { file_path, file_name, student_id, consultation_type } = file;
+      const { file_path, file_name, user_id, consultation_type } = file;
 
       const storageKey = decodeURIComponent(
         file_path.replace(
@@ -85,9 +85,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         );
 
         await db.query(
-          `INSERT INTO file_history (file_id, student_id, action, user, timestamp, file_name, consultation_type)
+          `INSERT INTO file_history (file_id, user_id, action, user, timestamp, file_name, consultation_type)
            VALUES (?, ?, 'Restored from Recycle Bin', ?, ?, ?, ?)`,
-          [file_id, student_id, username, timestamp, file_name, consultation_type]
+          [file_id, user_id, username, timestamp, file_name, consultation_type]
         );
 
         return res.status(200).json({ message: 'File restored successfully', restoredAt: timestamp });
@@ -103,9 +103,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         );
 
         await db.query(
-          `INSERT INTO file_history (file_id, student_id, action, user, timestamp, file_name, consultation_type)
+          `INSERT INTO file_history (file_id, user_id, action, user, timestamp, file_name, consultation_type)
            VALUES (?, ?, 'Moved to Recycle Bin', ?, ?, ?, ?)`,
-          [file_id, student_id, username, timestamp, file_name, consultation_type]
+          [file_id, user_id, username, timestamp, file_name, consultation_type]
         );
 
         return res.status(200).json({ message: 'File moved to recycle bin', deletedAt: timestamp });

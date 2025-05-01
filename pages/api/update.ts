@@ -15,7 +15,6 @@ export const config = {
 
 const SECRET_KEY = process.env.JWT_SECRET || 'your_secret_key';
 
-// ✅ Strongly typed JWT payload
 interface JwtPayload {
   userId?: number;
   adminId?: number;
@@ -58,12 +57,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (err) return res.status(500).json({ error: 'Form parsing error', details: err.message });
 
       const file_id = Array.isArray(fields.file_id) ? fields.file_id[0] : fields.file_id;
-      const student_id = Array.isArray(fields.student_id) ? fields.student_id[0] : fields.student_id;
+      const user_id = Array.isArray(fields.user_id) ? fields.user_id[0] : fields.user_id;
       const consultation_type = Array.isArray(fields.consultation_type)
         ? fields.consultation_type[0]
         : fields.consultation_type;
 
-      // ✅ Safely check and cast file
       const fileField = files.file;
       const file = Array.isArray(fileField)
         ? fileField[0]
@@ -71,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ? (fileField as FormidableFile)
         : undefined;
 
-      if (!file_id || !student_id || !consultation_type || !file) {
+      if (!file_id || !user_id || !consultation_type || !file) {
         return res.status(400).json({ error: 'Missing data' });
       }
 
@@ -116,7 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .replace(/ /g, '-')
         .replace(/:/g, '-');
 
-      const fileName = `${student_id}_${consultation_type}_${formattedDate}.${fileExt}`;
+      const fileName = `${user_id}_${consultation_type}_${formattedDate}.${fileExt}`;
       const newKey = `${consultation_type}/${fileName}`;
       const fileBuffer = fs.readFileSync(file.filepath);
 
@@ -131,16 +129,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data: publicUrlData } = supabase.storage.from('files').getPublicUrl(newKey);
       const newUrl = publicUrlData.publicUrl;
 
-      // ✅ Removed unused variable (updateResult)
       await pool.query<ResultSetHeader>(
         `UPDATE files SET file_path = ?, file_name = ?, last_edit_date = NOW(), edited_by = ? WHERE id = ?`,
         [newUrl, fileName, username, file_id]
       );
 
       await pool.query(
-        `INSERT INTO file_history (file_id, student_id, action, user, timestamp, file_name, consultation_type)
+        `INSERT INTO file_history (file_id, user_id, action, user, timestamp, file_name, consultation_type)
          VALUES (?, ?, 'Replaced with new file', ?, NOW(), ?, ?)`,
-        [file_id, student_id, username, fileName, consultation_type]
+        [file_id, user_id, username, fileName, consultation_type]
       );
 
       return res.status(200).json({ message: 'File updated successfully', fileUrl: newUrl });

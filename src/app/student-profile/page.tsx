@@ -16,61 +16,66 @@ import EditRecord from "../components/editRecord";
 import { Trie } from "../components/utils/trie";
 import useAuth from "../hooks/useAuth";
 
-interface Student {
+interface UserProfile {
   id: number;
-  student_id: string;
+  user_id: string;
   first_name: string;
   last_name: string;
-  present_address: string;
-  home_address: string;
+  gender: string;
   date_of_birth: string;
   email: string;
   phone_number: string;
+  present_address: string;
+  home_address: string;
+  course: string | null;
+  year: string | null;
+  department: string | null;
   medical_history: string;
   emergency_contact_name: string;
   emergency_contact_relation: string;
   emergency_contact_phone: string;
-  course: string;
-  year: string;
   photo_path: string;
+  role: "student" | "teacher";
 }
 
-const Record: React.FC = () => {
+const UserProfileManager: React.FC = () => {
   const { user, authChecked, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [profiles, setProfiles] = useState<UserProfile[]>([]);
+  const [randomProfiles, setRandomProfiles] = useState<UserProfile[]>([]);
+  const [recentSearches, setRecentSearches] = useState<UserProfile[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTabs, setActiveTabs] = useState<string[]>([]);
-  const [studentDetails, setStudentDetails] = useState<Record<string, Student | null>>({});
+  const [profileDetails, setProfileDetails] = useState<Record<string, UserProfile | null>>({});
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [recordAdded, setRecordAdded] = useState(false);
-  const [trie, setTrie] = useState<Trie<Student> | null>(null);
+  const [trie, setTrie] = useState<Trie<UserProfile> | null>(null);
 
-  const fetchStudentData = async () => {
+  const fetchProfiles = async () => {
     try {
-      const response = await fetch("/api/students", {
-        credentials: "include",
-      });
-      const data: Student[] = await response.json();
+      const res = await fetch("/api/user-profiles");
+      const data: UserProfile[] = await res.json();
 
-      const newTrie = new Trie<Student>();
-      data.forEach((student) => {
-        const fullName1 = `${student.first_name} ${student.last_name}`;
-        const fullName2 = `${student.last_name} ${student.first_name}`;
-        const id = student.student_id;
+      const newTrie = new Trie<UserProfile>();
+      data.forEach((profile) => {
+        const fullName1 = `${profile.first_name} ${profile.last_name}`;
+        const fullName2 = `${profile.last_name} ${profile.first_name}`;
+        const id = profile.user_id;
 
-        newTrie.insert(fullName1, student);
-        newTrie.insert(fullName2, student);
-        newTrie.insert(id, student);
+        newTrie.insert(fullName1, profile);
+        newTrie.insert(fullName2, profile);
+        newTrie.insert(id, profile);
       });
 
       setTrie(newTrie);
+      const shuffled = [...data].sort(() => 0.5 - Math.random());
+      setRandomProfiles(shuffled.slice(0, 5));
     } catch (error) {
-      console.error("Error fetching student data:", error);
+      console.error("Error fetching profiles:", error);
     } finally {
       setIsLoading(false);
     }
@@ -80,52 +85,46 @@ const Record: React.FC = () => {
     if (authChecked && !user) {
       router.push("/");
     } else if (authChecked) {
-      fetchStudentData();
+      fetchProfiles();
     }
-  }, [authChecked, user, router]);
+  }, [authChecked, user]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value.toLowerCase().trim();
     setSearchTerm(term);
     if (trie && term) {
       const results = trie.search(term);
-      setFilteredStudents(results);
+      setProfiles(results);
     } else {
-      setFilteredStudents([]);
+      setProfiles([]);
     }
   };
 
-  const handleSelectStudent = (student: Student) => {
-    const key = student.last_name;
-    setStudentDetails((prev) => ({ ...prev, [key]: student }));
+  const handleSelectProfile = (profile: UserProfile) => {
+    const key = profile.last_name;
+    setProfileDetails((prev) => ({ ...prev, [key]: profile }));
     if (!activeTabs.includes(key)) {
       setActiveTabs((prevTabs) => [...prevTabs, key]);
     }
     setActiveTab(key);
-    setFilteredStudents([]);
     setSearchTerm("");
+    setProfiles([]);
+    setRecentSearches((prev) => {
+      const updated = [profile, ...prev.filter((p) => p.user_id !== profile.user_id)];
+      return updated.slice(0, 5);
+    });
   };
 
   const handleCloseDetails = (key: string) => {
     setActiveTabs((prevTabs) => prevTabs.filter((tab) => tab !== key));
-    setStudentDetails((prev) => {
+    setProfileDetails((prev) => {
       const updated = { ...prev };
       delete updated[key];
       return updated;
     });
-
     if (activeTab === key) {
       setActiveTab(activeTabs[0] || null);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    };
-    return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
   const openAddModal = () => {
@@ -140,26 +139,23 @@ const Record: React.FC = () => {
 
   const openEditModal = () => setIsEditModalOpen(true);
 
-  const closeEditModal = (updatedStudent?: Student) => {
+  const closeEditModal = (updatedProfile?: UserProfile) => {
     setIsEditModalOpen(false);
-
-    if (updatedStudent) {
-      setStudentDetails((prev) => ({
+    if (updatedProfile) {
+      setProfileDetails((prev) => ({
         ...prev,
-        [updatedStudent.last_name]: updatedStudent,
+        [updatedProfile.last_name]: updatedProfile,
       }));
-
       toast.success("Record updated successfully!");
     }
-
-    setTimeout(fetchStudentData, 100);
+    setTimeout(fetchProfiles, 100);
   };
 
   const handleAddSuccess = () => {
     setRecordAdded(true);
     setIsAddModalOpen(false);
     toast.success("Record successfully added!");
-    fetchStudentData();
+    fetchProfiles();
   };
 
   const handleAddFailure = (errorType: string) => {
@@ -170,23 +166,23 @@ const Record: React.FC = () => {
     }
   };
 
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
   const SkeletonLoader = () => (
-    <div className="space-y-4 animate-pulse">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="p-6 bg-white rounded shadow">
-          <div className="h-4 w-1/2 bg-gray-300 rounded mb-2" />
-          <div className="h-4 w-1/3 bg-gray-300 rounded" />
-        </div>
-      ))}
+    <div className="space-y-6 animate-pulse p-6">
+      <div className="h-12 bg-gray-200 rounded w-3/4" />
+      <div className="h-10 bg-gray-200 rounded w-1/4" />
+      <div className="h-24 bg-gray-200 rounded" />
     </div>
   );
 
   if (authLoading || isLoading) {
-    return (
-      <div className="p-6">
-        <SkeletonLoader />
-      </div>
-    );
+    return <SkeletonLoader />;
   }
 
   return (
@@ -226,7 +222,7 @@ const Record: React.FC = () => {
             </div>
           )}
 
-          {isEditModalOpen && activeTab && studentDetails[activeTab] && (
+          {isEditModalOpen && activeTab && profileDetails[activeTab] && (
             <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
               <div className="p-6 rounded-lg shadow-lg max-w-5xl w-full h-5/6 overflow-y-auto bg-white relative">
                 <button
@@ -236,27 +232,68 @@ const Record: React.FC = () => {
                   <FiX size={24} />
                 </button>
                 <EditRecord
-                  studentId={studentDetails[activeTab]!.student_id}
+                  userId={profileDetails[activeTab]!.user_id}
                   onClose={closeEditModal}
                 />
               </div>
             </div>
           )}
 
-          {searchTerm && filteredStudents.length > 0 ? (
+          {!activeTab && !searchTerm && (
+            <div className="mb-6 space-y-4">
+              {recentSearches.length > 0 && (
+                <div>
+                  <h3 className="text-gray-700 font-semibold">Recent Searches</h3>
+                  <ul className="bg-white rounded shadow divide-y">
+  {recentSearches.map((profile) => (
+    <li
+      key={profile.user_id}
+      onClick={() => handleSelectProfile(profile)}
+      className="p-3 cursor-pointer hover:bg-gray-100 transition"
+    >
+      {profile.last_name.toUpperCase()}, {profile.first_name}
+    </li>
+  ))}
+</ul>
+
+                </div>
+              )}
+              {randomProfiles.length > 0 && (
+                <div>
+                  <h3 className="text-gray-700 font-semibold pb-3">Suggestions</h3>
+                  <ul className="bg-white rounded shadow divide-y-2 ">
+  {randomProfiles.map((profile) => (
+    <li
+      key={profile.user_id}
+      onClick={() => handleSelectProfile(profile)}
+      className="p-3 cursor-pointer hover:bg-blue-50 transition text-black-800"
+    >
+      {profile.last_name.toUpperCase()}, {profile.first_name}
+    </li>
+  ))}
+</ul>
+
+                </div>
+              )}
+            </div>
+          )}
+
+          {searchTerm && profiles.length > 0 && (
             <ul className="bg-white rounded-lg shadow-lg">
-              {filteredStudents.map((student) => (
+              {profiles.map((profile) => (
                 <li
-                  key={student.student_id}
-                  onClick={() => handleSelectStudent(student)}
+                  key={profile.user_id}
+                  onClick={() => handleSelectProfile(profile)}
                   className="cursor-pointer p-4 hover:bg-blue-100 transition-colors"
                 >
-                  {student.last_name.toUpperCase()}, {student.first_name}
+                  {profile.last_name.toUpperCase()}, {profile.first_name}
                 </li>
               ))}
             </ul>
-          ) : (
-            searchTerm && <p className="text-gray-600">No students found...</p>
+          )}
+
+          {searchTerm && profiles.length === 0 && (
+            <p className="text-gray-600">No profiles found...</p>
           )}
 
           <div className="mb-4 flex flex-wrap">
@@ -282,7 +319,7 @@ const Record: React.FC = () => {
             ))}
           </div>
 
-          {activeTab && studentDetails[activeTab] && (
+          {activeTab && profileDetails[activeTab] && (
             <div className="mt-4 bg-white rounded-lg p-4 shadow-lg relative">
               <button
                 onClick={openEditModal}
@@ -292,44 +329,42 @@ const Record: React.FC = () => {
               </button>
 
               <section className="flex gap-4 mb-4">
-                <div className="flex-shrink-0">
-                  <Image
-                    src={studentDetails[activeTab]!.photo_path || "/profile.png"}
-                    alt="Student photo"
-                    width={128}
-                    height={128}
-                    className="w-32 h-32 object-cover rounded-full border"
-                  />
-                </div>
+                <Image
+                  src={profileDetails[activeTab]!.photo_path || "/profile.png"}
+                  alt="Profile photo"
+                  width={128}
+                  height={128}
+                  className="w-32 h-32 object-cover rounded-full border"
+                />
                 <div>
                   <p className="text-xl font-semibold">
-                    Name: {studentDetails[activeTab]!.last_name.toUpperCase()},{" "}
-                    {studentDetails[activeTab]!.first_name}
+                    Name: {profileDetails[activeTab]!.last_name.toUpperCase()},{" "}
+                    {profileDetails[activeTab]!.first_name}
                   </p>
-                  <p>Student ID: {studentDetails[activeTab]!.student_id}</p>
-                  <p>Present Address: {studentDetails[activeTab]!.present_address}</p>
-                  <p>Home Address: {studentDetails[activeTab]!.home_address}</p>
+                  <p>ID: {profileDetails[activeTab]!.user_id}</p>
+                  <p>Present Address: {profileDetails[activeTab]!.present_address}</p>
+                  <p>Home Address: {profileDetails[activeTab]!.home_address}</p>
                   <p>
-                    Course - Year: {studentDetails[activeTab]!.course} -{" "}
-                    {studentDetails[activeTab]!.year}
+                    Course - Year: {profileDetails[activeTab]!.course} -{" "}
+                    {profileDetails[activeTab]!.year}
                   </p>
-                  <p>Date of Birth: {formatDate(studentDetails[activeTab]!.date_of_birth)}</p>
-                  <p>Email: {studentDetails[activeTab]!.email}</p>
-                  <p>Phone: {studentDetails[activeTab]!.phone_number}</p>
+                  <p>Date of Birth: {formatDate(profileDetails[activeTab]!.date_of_birth)}</p>
+                  <p>Email: {profileDetails[activeTab]!.email}</p>
+                  <p>Phone: {profileDetails[activeTab]!.phone_number}</p>
                 </div>
               </section>
 
-              <ConsultationCards selectedStudent={studentDetails[activeTab]!} />
-              <ClinicHistory studentId={studentDetails[activeTab]!.student_id} />
+              <ConsultationCards selectedProfile={profileDetails[activeTab]!} />
+              <ClinicHistory id={profileDetails[activeTab]!.user_id} />
             </div>
           )}
         </main>
 
-        {activeTab && studentDetails[activeTab] && (
+        {activeTab && profileDetails[activeTab] && (
           <EmergencyContacts
-            name={studentDetails[activeTab]!.emergency_contact_name}
-            relation={studentDetails[activeTab]!.emergency_contact_relation}
-            phone={studentDetails[activeTab]!.emergency_contact_phone}
+            name={profileDetails[activeTab]!.emergency_contact_name}
+            relation={profileDetails[activeTab]!.emergency_contact_relation}
+            phone={profileDetails[activeTab]!.emergency_contact_phone}
           />
         )}
       </div>
@@ -337,4 +372,4 @@ const Record: React.FC = () => {
   );
 };
 
-export default Record;
+export default UserProfileManager;

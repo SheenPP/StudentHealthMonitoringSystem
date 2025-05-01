@@ -14,9 +14,11 @@ export class TrieNode<T> {
 
 export class Trie<T> {
   root: TrieNode<T>;
+  values: T[]; // <-- NEW: stores all inserted values
 
   constructor() {
     this.root = new TrieNode<T>();
+    this.values = [];
   }
 
   insert(key: string, record: T): void {
@@ -32,6 +34,11 @@ export class Trie<T> {
 
     node.isEndOfWord = true;
     node.data.push(record);
+
+    // Avoid duplicates in .values
+    if (!this.values.find((val) => JSON.stringify(val) === JSON.stringify(record))) {
+      this.values.push(record);
+    }
   }
 
   search(prefix: string): T[] {

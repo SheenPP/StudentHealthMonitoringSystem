@@ -1,21 +1,27 @@
 export const useOptions = () => {
   const departments = [
-    "College of Technology and Allied Sciences",
     "College of Teacher Education",
+    "College of Technology",
+    "College of Midwifery",
+    "College of Fisheries",
   ];
 
   const coursesByDepartment: Record<string, string[]> = {
-    "College of Technology and Allied Sciences": [
-      "Bachelor of Science in Computer Science",
-      "Bachelor of Science in Fisheries", 
-      "Bachelor of Science in Industrial Technology major in Food Preparation and Service Management",
-      "Bachelor of Science in Industrial Technology major in Electrical Technology", 
-      "Midwifery", 
-    ],
     "College of Teacher Education": [
-      "Bachelor in Elementary Education",
-      "Bachelor in Secondary Education major in English",
-      "Bachelor in Secondary Education major in Mathematics"
+      "Bachelor of Elementary Education",
+      "Bachelor of Secondary Education major in English",
+      "Bachelor of Secondary Education major in Mathematics",
+    ],
+    "College of Technology": [
+      "Bachelor of Science in Computer Science",
+      "Bachelor of Science in Industrial Technology major in Food Preparation and Services Technology",
+      "Bachelor of Science in Industrial Technology major in Electrical Technology",
+    ],
+    "College of Midwifery": [
+      "Bachelor of Science in Midwifery",
+    ],
+    "College of Fisheries": [
+      "Bachelor of Science in Fisheries",
     ],
   };
 

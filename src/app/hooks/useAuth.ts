@@ -1,5 +1,3 @@
-// hooks/useAuth.ts
-
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -14,13 +12,23 @@ type User = {
   profilePicture?: string | null;
 };
 
+interface UseAuthOptions {
+  skipRedirect?: boolean;
+  skip?: boolean;
+}
 
-export default function useAuth() {
+export default function useAuth({ skipRedirect = false, skip = false }: UseAuthOptions = {}) {
   const [user, setUser] = useState<User | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (skip) {
+      setAuthChecked(true);
+      setLoading(false);
+      return;
+    }
+
     const checkAuth = async () => {
       try {
         const res = await axios.get('/api/auth/getUser', {
@@ -28,15 +36,19 @@ export default function useAuth() {
         });
         setUser(res.data.user);
       } catch {
+        console.error('User not authenticated.');
+        if (!skipRedirect) {
+          window.location.href = '/';
+        }
         setUser(null);
       } finally {
         setLoading(false);
-        setAuthChecked(true); // ✅ mark that auth check is done
+        setAuthChecked(true);
       }
     };
 
     checkAuth();
-  }, []);
+  }, [skip, skipRedirect]);
 
-  return { user, authChecked, loading };
+  return { user, loading, authChecked };
 }

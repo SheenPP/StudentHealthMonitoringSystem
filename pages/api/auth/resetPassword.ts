@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const [rows] = await pool.query<StudentRow[]>(
-      "SELECT * FROM studentaccount WHERE reset_token = ?",
+      "SELECT * FROM accounts WHERE reset_token = ?",
       [token]
     );
 
@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const email = rows[0].email;
 
     await pool.query(
-      "UPDATE studentaccount SET password_hash = ?, reset_token = NULL WHERE email = ?",
+      "UPDATE accounts SET password_hash = ?, reset_token = NULL WHERE email = ?",
       [hashedPassword, email]
     );
 

@@ -145,7 +145,7 @@ const Sidebar: React.FC = () => {
             showBadge={true}
           />
           <hr className="border-gray-300 my-4" />
-          <NavItem href="/logs" icon={<FiBookOpen size={20} />} text="Logs" />
+          <NavItem href="/visits" icon={<FiBookOpen size={20} />} text="Visits" />
           <NavItem href="/archives" icon={<FiArchive size={20} />} text="Archives" />
         </ul>
       </nav>

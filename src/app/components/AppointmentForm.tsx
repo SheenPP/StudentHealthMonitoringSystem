@@ -15,12 +15,12 @@ import "react-toastify/dist/ReactToastify.css";
 
 interface AppointmentFormProps {
   onBookSuccess: () => void;
-  studentId: string;
+  userId: string;
 }
 
 export default function AppointmentForm({
   onBookSuccess,
-  studentId,
+  userId,
 }: AppointmentFormProps) {
   const [date, setDate] = useState<string>("");
   const [time, setTime] = useState<string>("");
@@ -69,7 +69,7 @@ export default function AppointmentForm({
       const res = await fetch("/api/appointment/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId, date, time, reason }),
+        body: JSON.stringify({ user_id: userId, date, time, reason }),
       });
 
       if (res.ok) {

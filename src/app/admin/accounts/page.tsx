@@ -10,12 +10,14 @@ interface Account {
   id: number;
   name: string;
   email: string;
+  role?: string;
 }
 
 export default function AdminApprovals() {
   const { authChecked } = useAdminAuth();
   const [pendingStudents, setPendingStudents] = useState<Account[]>([]);
-  const [pendingUsers, setPendingUsers] = useState<Account[]>([]);
+  const [pendingTeachers, setPendingTeachers] = useState<Account[]>([]);
+  const [pendingStaffs, setPendingStaffs] = useState<Account[]>([]);
   const [pendingAdmins, setPendingAdmins] = useState<Account[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -31,9 +33,16 @@ export default function AdminApprovals() {
       const response = await axios.get("/api/admin/getPendingAccounts", {
         withCredentials: true,
       });
-      setPendingStudents(response.data.students);
-      setPendingUsers(response.data.users);
-      setPendingAdmins(response.data.admins);
+
+      const { accounts, users, admins } = response.data;
+
+      const students = (accounts ?? []).filter((acc: Account) => acc.role === "student");
+      const teachers = (accounts ?? []).filter((acc: Account) => acc.role === "teacher");
+
+      setPendingStudents(students);
+      setPendingTeachers(teachers);
+      setPendingStaffs(users); // renamed "users" to "staffs"
+      setPendingAdmins(admins);
     } catch (error) {
       console.error("Error fetching pending accounts:", error);
     } finally {
@@ -74,18 +83,20 @@ export default function AdminApprovals() {
       <Sidebar />
       <div className="flex-1 p-6">
         <h1 className="text-2xl font-semibold mb-2">Pending Approvals</h1>
-        <p className="text-gray-600 mb-6">Manage student, user, and admin approvals.</p>
+        <p className="text-gray-600 mb-6">Manage student, teacher, staff, and admin approvals.</p>
 
         {loadingData ? (
           <>
             <SkeletonTable title="Pending Students" />
-            <SkeletonTable title="Pending Users" />
+            <SkeletonTable title="Pending Teachers" />
+            <SkeletonTable title="Pending Staffs" />
             <SkeletonTable title="Pending Admins" />
           </>
         ) : (
           <>
             <ApprovalTable title="Pending Students" data={pendingStudents} type="student" onAction={handleConfirm} />
-            <ApprovalTable title="Pending Users" data={pendingUsers} type="user" onAction={handleConfirm} />
+            <ApprovalTable title="Pending Teachers" data={pendingTeachers} type="teacher" onAction={handleConfirm} />
+            <ApprovalTable title="Pending Staffs" data={pendingStaffs} type="user" onAction={handleConfirm} />
             <ApprovalTable title="Pending Admins" data={pendingAdmins} type="admin" onAction={handleConfirm} />
           </>
         )}
@@ -131,7 +142,7 @@ interface ApprovalTableProps {
 }
 
 const ApprovalTable = ({ title, data, type, onAction }: ApprovalTableProps) => {
-  if (data.length === 0) return null;
+  if (!data || data.length === 0) return null;
 
   return (
     <div className="mb-8">
@@ -140,8 +151,7 @@ const ApprovalTable = ({ title, data, type, onAction }: ApprovalTableProps) => {
         <table className="w-full table-fixed text-sm">
           <thead className="bg-gray-100 text-gray-700 uppercase">
             <tr>
-              <th className="p-3 w-[60px] border text-left">ID</th>
-              <th className="p-3 w-1/4 border text-left">Name</th>
+              <th className="p-3 w-1/3 border text-left">Name</th>
               <th className="p-3 w-1/3 border text-left">Email</th>
               <th className="p-3 w-[150px] border text-left">Actions</th>
             </tr>
@@ -149,7 +159,6 @@ const ApprovalTable = ({ title, data, type, onAction }: ApprovalTableProps) => {
           <tbody>
             {data.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50">
-                <td className="p-3 border">{item.id}</td>
                 <td className="p-3 border truncate">{item.name}</td>
                 <td className="p-3 border truncate">{item.email}</td>
                 <td className="p-3 border">
@@ -178,17 +187,36 @@ const ApprovalTable = ({ title, data, type, onAction }: ApprovalTableProps) => {
 };
 
 const SkeletonTable = ({ title }: { title: string }) => (
-  <div className="mt-6 animate-pulse">
+  <div className="mb-8">
     <h2 className="text-lg font-medium text-gray-400">{title}</h2>
-    <div className="mt-2 space-y-2 border border-gray-200 rounded">
-      {[...Array(4)].map((_, index) => (
-        <div key={index} className="grid grid-cols-4 gap-4 px-4 py-2">
-          <div className="h-4 bg-gray-300 rounded col-span-1" />
-          <div className="h-4 bg-gray-300 rounded col-span-1" />
-          <div className="h-4 bg-gray-300 rounded col-span-1" />
-          <div className="h-4 bg-gray-300 rounded col-span-1" />
-        </div>
-      ))}
+    <div className="overflow-x-auto rounded border border-gray-300 shadow mt-2">
+      <table className="w-full table-fixed text-sm">
+        <thead className="bg-gray-100 text-gray-400 uppercase">
+          <tr>
+            <th className="p-3 w-1/3 border text-left">Name</th>
+            <th className="p-3 w-1/3 border text-left">Email</th>
+            <th className="p-3 w-[150px] border text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[...Array(4)].map((_, index) => (
+            <tr key={index} className="animate-pulse">
+              <td className="p-3 border">
+                <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+              </td>
+              <td className="p-3 border">
+                <div className="h-4 bg-gray-300 rounded w-5/6"></div>
+              </td>
+              <td className="p-3 border">
+                <div className="flex gap-2">
+                  <div className="h-6 w-16 bg-gray-300 rounded" />
+                  <div className="h-6 w-16 bg-gray-300 rounded" />
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   </div>
 );

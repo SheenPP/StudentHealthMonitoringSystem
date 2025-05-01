@@ -8,7 +8,7 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const StudentRegistration = () => {
-  const [studentId, setStudentId] = useState("");
+  const [role, setRole] = useState("student"); // New field
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -22,44 +22,34 @@ const StudentRegistration = () => {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await axios.get("/api/auth/getStudentUser", {
-          withCredentials: true,
-        });
-
-        if (response.status === 200 && response.data) {
-          router.push("/student/dashboard");
-        }
-      } catch {
-        // Not logged in
-      }
-    };
-
-    checkAuth();
-  }, [router]);
-
   const alphanumericRegex = /^[a-zA-Z0-9]+$/;
   const nameRegex = /^[a-zA-Z\s\-.]+$/;
   const passwordRegex =
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get("/api/auth/getUsersUser", {
+          withCredentials: true,
+        });
+
+        if (response.status === 200 && response.data) {
+          router.push("/user/dashboard");
+        }
+      } catch {}
+    };
+
+    checkAuth();
+  }, [router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    if (!alphanumericRegex.test(studentId)) {
-      setError("Student ID must contain only letters and numbers.");
-      setLoading(false);
-      return;
-    }
-
     if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
-      setError(
-        "First and Last Name must contain only letters, spaces, dashes, and dots."
-      );
+      setError("First and Last Name must contain only letters, spaces, dashes, and dots.");
       setLoading(false);
       return;
     }
@@ -71,9 +61,7 @@ const StudentRegistration = () => {
     }
 
     if (!passwordRegex.test(password)) {
-      setError(
-        "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character."
-      );
+      setError("Password must include uppercase, lowercase, number, and special character.");
       setLoading(false);
       return;
     }
@@ -86,9 +74,9 @@ const StudentRegistration = () => {
 
     try {
       await axios.post(
-        "/api/auth/studentregister",
+        "/api/auth/userregister",
         {
-          studentId,
+          role,
           firstName,
           middleName,
           lastName,
@@ -99,8 +87,8 @@ const StudentRegistration = () => {
       );
 
       setSuccess(true);
-      setTimeout(() => router.push("/student/login"), 2000);
-    } catch (err: unknown) {
+      setTimeout(() => router.push(`/user/login`), 2000);
+    } catch (err: any) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.error || "Registration failed. Please try again.");
       } else {
@@ -115,7 +103,7 @@ const StudentRegistration = () => {
     <div className="flex flex-col items-center justify-center p-6 sm:p-8">
       <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-lg">
         <h2 className="text-xl sm:text-2xl text-black font-semibold mb-6 text-center">
-          Student Registration
+          Account Registration
         </h2>
 
         {success ? (
@@ -137,19 +125,24 @@ const StudentRegistration = () => {
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="studentId" className="block text-sm font-medium text-gray-700">Student ID</label>
-                <input
-                  type="text"
-                  id="studentId"
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  required
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+                  Register As
+                </label>
+                <select
+                  id="role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
                   className="mt-1 p-2 w-full border text-black border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                />
+                >
+                  <option value="student">Student</option>
+                  <option value="teacher">Teacher</option>
+                </select>
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email
+                </label>
                 <input
                   type="email"
                   id="email"
@@ -161,7 +154,9 @@ const StudentRegistration = () => {
               </div>
 
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">First Name</label>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                  First Name
+                </label>
                 <input
                   type="text"
                   id="firstName"
@@ -173,7 +168,9 @@ const StudentRegistration = () => {
               </div>
 
               <div>
-                <label htmlFor="middleName" className="block text-sm font-medium text-gray-700">Middle Name (Optional)</label>
+                <label htmlFor="middleName" className="block text-sm font-medium text-gray-700">
+                  Middle Name (Optional)
+                </label>
                 <input
                   type="text"
                   id="middleName"
@@ -184,7 +181,9 @@ const StudentRegistration = () => {
               </div>
 
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">Last Name</label>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                  Last Name
+                </label>
                 <input
                   type="text"
                   id="lastName"
@@ -196,7 +195,6 @@ const StudentRegistration = () => {
               </div>
             </div>
 
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
               <div className="relative">
@@ -217,11 +215,10 @@ const StudentRegistration = () => {
                 </button>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Must be at least 8 characters long and include uppercase, lowercase, number, and special character.
+                At least 8 characters, uppercase, lowercase, number, special char.
               </p>
             </div>
 
-            {/* Confirm Password Field */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm Password</label>
               <div className="relative">
@@ -257,7 +254,7 @@ const StudentRegistration = () => {
 
         <p className="text-center text-gray-600 text-sm mt-4">
           Already have an account?{" "}
-          <Link href="/student/login" className="text-blue-500 hover:underline">
+          <Link href={`/user/login`} className="text-blue-500 hover:underline">
             Log in
           </Link>
         </p>

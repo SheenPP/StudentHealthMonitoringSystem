@@ -14,16 +14,26 @@ interface StudentUser {
   photo_path?: string;
 }
 
+interface SchoolTerm {
+  id: number;
+  school_year: string;
+  semester: string;
+  is_active: number;
+}
+
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<StudentUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [terms, setTerms] = useState<SchoolTerm[]>([]);
+  const [selectedTermId, setSelectedTermId] = useState<number | null>(null);
+
   const router = useRouter();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get('/api/auth/getStudentUser', {
+        const response = await axios.get('/api/auth/getUsersUser', {
           withCredentials: true,
         });
         setUser(response.data);
@@ -38,30 +48,69 @@ const Navbar: React.FC = () => {
       }
     };
 
+    const fetchTerms = async () => {
+      try {
+        const res = await fetch('/api/school-terms/all');
+        const data = await res.json();
+        setTerms(data);
+        const active = data.find((t: SchoolTerm) => t.is_active === 1);
+        if (active) {
+          setSelectedTermId(active.id);
+          localStorage.setItem('term_id', active.id.toString());
+        }
+      } catch (err) {
+        console.error('Failed to fetch school terms:', err);
+      }
+    };
+
     fetchUser();
+    fetchTerms();
   }, []);
 
   const handleLogout = async () => {
     try {
       await axios.post('/api/auth/studentlogout', {}, { withCredentials: true });
       setUser(null);
-      router.push('/student/login');
+      router.push('/user/login');
     } catch (err) {
       console.error('Logout failed:', err);
     }
   };
 
-  const avatarSrc = user?.photo_path && user.photo_path.trim() !== ''
-    ? user.photo_path
-    : '/user-placeholder.png';
+  const handleTermChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newId = parseInt(e.target.value);
+    setSelectedTermId(newId);
+    localStorage.setItem('term_id', newId.toString());
+  };
+
+  const avatarSrc =
+    user?.photo_path && user.photo_path.trim() !== ''
+      ? user.photo_path
+      : '/user-placeholder.png';
 
   return (
     <nav className="bg-white shadow-md border-b border-gray-200">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center py-3">
-          <Link href="/student/dashboard" className="text-xl font-semibold text-gray-800">
-            BISU Clinic
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link href="/user/dashboard" className="text-xl font-semibold text-gray-800">
+              BISU Clinic
+            </Link>
+
+            {/* School Term Dropdown */}
+            <select
+              value={selectedTermId ?? ''}
+              onChange={handleTermChange}
+              className="text-sm border px-2 py-1 rounded text-gray-700"
+            >
+              <option value="" disabled>Select Term</option>
+              {terms.map((term) => (
+                <option key={term.id} value={term.id}>
+                  A.Y. {term.school_year} | {term.semester}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -73,15 +122,14 @@ const Navbar: React.FC = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6">
             <Link
-              href="/student/appointments"
+              href="/user/appointments"
               className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
             >
               <FiCalendar size={20} />
               <span>Appointments</span>
             </Link>
-
             <Link
-              href="/student/profile"
+              href="/user/profile"
               className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
             >
               <FiUser size={20} />
@@ -111,7 +159,7 @@ const Navbar: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <Link href="/student/login" className="text-blue-600 font-medium">
+              <Link href="/user/login" className="text-blue-600 font-medium">
                 Login
               </Link>
             )}
@@ -123,7 +171,7 @@ const Navbar: React.FC = () => {
           <div className="md:hidden bg-white border-t border-gray-200 w-full">
             <div className="flex flex-col space-y-4 p-4">
               <Link
-                href="/student/appointments"
+                href="/user/appointments"
                 className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
               >
                 <FiCalendar size={20} />
@@ -131,12 +179,28 @@ const Navbar: React.FC = () => {
               </Link>
 
               <Link
-                href="/student/profile"
+                href="/user/profile"
                 className="text-gray-700 hover:text-blue-600 flex items-center gap-2"
               >
                 <FiUser size={20} />
                 <span>Profile</span>
               </Link>
+
+              {/* Mobile Term Dropdown */}
+              <div>
+                <select
+                  value={selectedTermId ?? ''}
+                  onChange={handleTermChange}
+                  className="text-sm border px-2 py-1 rounded w-full text-gray-700"
+                >
+                  <option value="" disabled>Select Term</option>
+                  {terms.map((term) => (
+                    <option key={term.id} value={term.id}>
+                      A.Y. {term.school_year} | {term.semester}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               {loading ? (
                 <span className="text-gray-600">Loading...</span>
@@ -161,7 +225,7 @@ const Navbar: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <Link href="/student/login" className="text-blue-600 font-medium">
+                <Link href="/user/login" className="text-blue-600 font-medium">
                   Login
                 </Link>
               )}

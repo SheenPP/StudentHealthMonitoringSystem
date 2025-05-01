@@ -15,10 +15,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: "Method not allowed. Use PATCH." });
   }
 
-  const { studentId, currentPassword, newPassword, confirmPassword } = req.body;
+  const { userId, currentPassword, newPassword, confirmPassword } = req.body;
 
   // ✅ Validate inputs
-  if (!studentId || !currentPassword || !newPassword || !confirmPassword) {
+  if (!userId || !currentPassword || !newPassword || !confirmPassword) {
     return res.status(400).json({ error: "All fields are required." });
   }
 
@@ -36,12 +36,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // 🔍 Fetch existing student by ID
     const [rows] = await pool.query<StudentRow[]>(
-      "SELECT password_hash FROM studentaccount WHERE student_id = ?",
-      [studentId]
+      "SELECT password_hash FROM accounts WHERE user_id = ?",
+      [userId]
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: "Student not found." });
+      return res.status(404).json({ error: "User not found." });
     }
 
     const isMatch = await bcrypt.compare(currentPassword, rows[0].password_hash);
@@ -54,9 +54,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const newHashed = await bcrypt.hash(newPassword, 12);
 
     // 💾 Update password in the database
-    await pool.query("UPDATE studentaccount SET password_hash = ? WHERE student_id = ?", [
+    await pool.query("UPDATE accounts SET password_hash = ? WHERE user_id = ?", [
       newHashed,
-      studentId,
+      userId,
     ]);
 
     return res.status(200).json({ message: "Password changed successfully." });

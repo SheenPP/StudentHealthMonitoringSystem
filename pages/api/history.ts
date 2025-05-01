@@ -11,10 +11,10 @@ interface FileHistoryRecord extends RowDataPacket {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const studentId = req.query.student_id as string;
+    const id = req.query.id as string; // Use `id` instead of `user_id`
 
-    if (!studentId) {
-      return res.status(400).json({ message: 'Student ID is required' });
+    if (!id) {
+      return res.status(400).json({ message: 'User ID is required' });
     }
 
     const query = `
@@ -24,16 +24,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         timestamp,
         file_name AS fileName
       FROM file_history
-      WHERE student_id = ?
+      WHERE user_id = ?
       ORDER BY timestamp DESC;
     `;
 
-    const [rows] = await pool.query<FileHistoryRecord[]>(query, [studentId]);
+    const [rows] = await pool.query<FileHistoryRecord[]>(query, [id]);
 
     console.log('Fetched history:', rows);
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: 'No file history found for the given student ID' });
+      return res.status(404).json({ message: 'No file history found for the given ID' });
     }
 
     return res.status(200).json(rows);

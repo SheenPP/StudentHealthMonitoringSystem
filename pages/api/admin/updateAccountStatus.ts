@@ -31,8 +31,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     switch (type) {
       case "student":
-        table = "studentaccount";
-        idColumn = "student_id";
+      case "teacher":
+        table = "accounts";
+        idColumn = "id";
         break;
       case "user":
         table = "users";

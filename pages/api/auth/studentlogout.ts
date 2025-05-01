@@ -7,7 +7,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   // 🍪 Clear the auth token cookie
-  res.setHeader("Set-Cookie", serialize("studentAuthToken", "", {
+  res.setHeader("Set-Cookie", serialize("userAuthToken", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",

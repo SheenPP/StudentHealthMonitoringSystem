@@ -38,6 +38,7 @@ const ProfilePage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -45,15 +46,23 @@ const ProfilePage = () => {
       router.push('/');
     } else if (authChecked && user) {
       setFormData({
-        firstname: user.firstname,
-        lastname: user.lastname,
-        username: user.username,
-        email: user.email,
-        position: user.position,
+        firstname: user.firstname || '',
+        lastname: user.lastname || '',
+        username: user.username || '',
+        email: user.email || '',
+        position: user.position || '',
       });
-      setProfilePicture(user.profilePicture || null); // use null instead of ""
+      setProfilePicture(user.profilePicture || null);
     }
   }, [authChecked, user, router]);
+
+  useEffect(() => {
+    return () => {
+      if (profilePicture?.startsWith('blob:')) {
+        URL.revokeObjectURL(profilePicture);
+      }
+    };
+  }, [profilePicture]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -170,6 +179,7 @@ const ProfilePage = () => {
 
                 <div className="space-y-4">
                   <input
+                    type="text"
                     name="firstname"
                     value={formData.firstname}
                     onChange={handleChange}
@@ -177,6 +187,7 @@ const ProfilePage = () => {
                     className="w-full border border-gray-300 p-2 rounded"
                   />
                   <input
+                    type="text"
                     name="lastname"
                     value={formData.lastname}
                     onChange={handleChange}
@@ -184,6 +195,7 @@ const ProfilePage = () => {
                     className="w-full border border-gray-300 p-2 rounded"
                   />
                   <input
+                    type="text"
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
@@ -191,14 +203,15 @@ const ProfilePage = () => {
                     className="w-full border border-gray-300 p-2 rounded"
                   />
                   <input
+                    type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Email"
-                    type="email"
                     className="w-full border border-gray-300 p-2 rounded"
                   />
                   <input
+                    type="text"
                     name="position"
                     value={formData.position}
                     onChange={handleChange}
@@ -249,13 +262,22 @@ const ProfilePage = () => {
                     )}
                   </div>
 
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm Password"
-                    className="w-full border border-gray-300 p-2 rounded"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm Password"
+                      className="w-full border border-gray-300 p-2 rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-3 top-2.5 text-gray-600"
+                    >
+                      {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                    </button>
+                  </div>
 
                   <button
                     onClick={handleSubmit}
