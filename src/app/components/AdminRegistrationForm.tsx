@@ -9,22 +9,23 @@ const AdminRegistrationForm = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    role: "admin",
+    position: "",
   });
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
-    // Allow special characters "-" and "." in the name field
     if (name === "name" && /[^a-zA-Z\s\-.]/.test(value)) {
       setError("Name cannot contain special characters or numbers");
       return;
     }
 
-    setError(""); // Clear error when valid input is entered
+    setError("");
     setFormData({
       ...formData,
       [name]: value,
@@ -37,20 +38,21 @@ const AdminRegistrationForm = () => {
     setError("");
     setSuccess("");
 
-    // Basic validation
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+    const { name, email, password, confirmPassword, role, position } = formData;
+
+    if (!name || !email || !password || !confirmPassword || !position) {
       setError("Please fill in all fields.");
       setLoading(false);
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       setError("Passwords do not match.");
       setLoading(false);
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (password.length < 6) {
       setError("Password must be at least 6 characters long.");
       setLoading(false);
       return;
@@ -63,17 +65,17 @@ const AdminRegistrationForm = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          fullName: formData.name,
-          email: formData.email,
-          password: formData.password,
+          userName: name,
+          email,
+          password,
+          role,
+          position,
         }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong");
-      }
+      if (!response.ok) throw new Error(data.error || "Something went wrong");
 
       setSuccess("Admin registration successful!");
       setFormData({
@@ -81,13 +83,11 @@ const AdminRegistrationForm = () => {
         email: "",
         password: "",
         confirmPassword: "",
+        role: "admin",
+        position: "",
       });
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An error occurred during registration.");
-      }
+    } catch (err: any) {
+      setError(err.message || "An error occurred during registration.");
     } finally {
       setLoading(false);
     }
@@ -101,7 +101,7 @@ const AdminRegistrationForm = () => {
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label htmlFor="name" className="block text-gray-700 font-medium mb-2">
-            Full Name
+            Username
           </label>
           <input
             type="text"
@@ -141,7 +141,7 @@ const AdminRegistrationForm = () => {
             required
           />
         </div>
-        <div className="mb-6">
+        <div className="mb-4">
           <label htmlFor="confirmPassword" className="block text-gray-700 font-medium mb-2">
             Confirm Password
           </label>
@@ -154,6 +154,41 @@ const AdminRegistrationForm = () => {
             className="w-full px-4 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="role" className="block text-gray-700 font-medium mb-2">
+            Role
+          </label>
+          <select
+            id="role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="admin">Admin</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+        </div>
+        <div className="mb-6">
+          <label htmlFor="position" className="block text-gray-700 font-medium mb-2">
+            Position
+          </label>
+          <select
+            id="position"
+            name="position"
+            value={formData.position}
+            onChange={handleChange}
+            className="w-full px-4 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="">-- Select Position --</option>
+            <option value="Clinic Head">Clinic Head</option>
+            <option value="Health Officer">Health Officer</option>
+            <option value="Nurse">Nurse</option>
+            <option value="Clerk">Clerk</option>
+            <option value="Medical Staff">Medical Staff</option>
+          </select>
         </div>
         <button
           type="submit"

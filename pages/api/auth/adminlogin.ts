@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // ✅ Typed MySQL query
     const [admin] = await pool.query<Admin[]>(
-      "SELECT admin_id, username, email, password_hash, role, position, status FROM admin_accounts WHERE username = ?",
+      "SELECT admin_id, username, email, password, role, position, status FROM admin_accounts WHERE username = ?",
       [username]
     ) as [Admin[], FieldPacket[]];
 
@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: "Your account is pending approval" });
     }
 
-    const isMatch = await bcrypt.compare(password, adminData.password_hash);
+    const isMatch = await bcrypt.compare(password, adminData.password);
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
